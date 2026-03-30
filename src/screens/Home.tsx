@@ -57,7 +57,7 @@ export default function Home() {
 
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold tracking-tight mb-2">Moteur</h1>
+          <h1 className="text-5xl font-bold tracking-tight mb-2">Le Mot Juste</h1>
           <p className="text-gray-400">French vocabulary charades</p>
         </div>
 

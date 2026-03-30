@@ -1,8 +1,9 @@
 const { createClient } = require('@supabase/supabase-js')
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env.local') })
 
 const supabase = createClient(
-  'https://kjgermafiwbswopdgtwr.supabase.co',
-  'REDACTED_SUPABASE_ANON_KEY'
+  process.env.VITE_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
 const words = [

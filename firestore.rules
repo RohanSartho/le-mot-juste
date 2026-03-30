@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Words are read-only for all clients — writes only via admin/seed scripts
+    match /words/{wordId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Game sessions are fully public in v1 (no auth)
+    // v2: lock down to session participants only
+    match /game_sessions/{sessionId} {
+      allow read, write: if true;
+    }
+  }
+}
