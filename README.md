@@ -1,8 +1,8 @@
-# 🇫🇷 ⚜️ Le Mot Juste — *"The Right Word"*
+# 🇫🇷 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Flag_of_Quebec.svg/40px-Flag_of_Quebec.svg.png" height="20" alt="Quebec flag" style="vertical-align:middle"/> Le Mot Juste — *"The Right Word"*
 
 A real-time multiplayer French vocabulary game built around charades. One player describes a French word using only French sentences — no gestures, no translations — while everyone else shouts their guess. First to get it right wins the round.
 
-Built for French learners and Francophiles — whether you're learning Parisian French 🇫🇷 or Québécois ⚜️.
+Built for French learners and Francophiles — whether you're learning Parisian French 🇫🇷 or Québécois <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Flag_of_Quebec.svg/40px-Flag_of_Quebec.svg.png" height="14" alt="Quebec" style="vertical-align:middle"/>.
 
 **Live:** [le-mot-juste.vercel.app](https://le-mot-juste.vercel.app)
 
