@@ -139,6 +139,7 @@
 ---
 
 ## Post-v1 Backlog (do not implement)
+- [ ] **Guesser point tracking** — Currently only the describer scores. To award guessers: either (a) add a real-time "who guessed?" tap UI that appears after each correct word, or (b) implement team-based scoring where the describing team shares points. Requires deciding whether guesses are tracked per-player or per-team. Blocked on real-time sync design.
 - [ ] Real-time guess sync via Firestore Realtime
 - [ ] Custom word packs
 - [ ] Persistent accounts + history

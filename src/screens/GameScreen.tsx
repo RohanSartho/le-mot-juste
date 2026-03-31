@@ -60,16 +60,10 @@ export default function GameScreen({ code }: Props) {
       const players = Object.keys(session.scores)
       const dIdx = players.indexOf(session.current_describer!)
 
-      // Score
+      // Score — describer earns points only (guesser tracking: see TASKS.md backlog)
       let newScores = { ...session.scores }
       if (correct) {
-        if (players.length === 1) {
-          // Solo mode — only the describer scores, flat +1
-          newScores[session.current_describer!] = (newScores[session.current_describer!] ?? 0) + 1
-        } else {
-          const guesserName = players[(dIdx + 1) % players.length]
-          newScores = awardPoints(newScores, session.current_describer!, guesserName, hintUsed)
-        }
+        newScores = awardPoints(newScores, session.current_describer!, hintUsed)
       }
 
       // words_this_turn: did this describer finish their allotted words?
