@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase'
@@ -169,6 +169,15 @@ export default function Lobby() {
   }
 
   // ── Lobby ─────────────────────────────────────────────────────────────────
+  const [copied, setCopied] = useState(false)
+  const handleCopy = useCallback(() => {
+    if (!code) return
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }, [code])
+
   const players = session ? Object.entries(session.scores) : []
   const expectedCount = session?.settings.max_players ?? '?'
 
@@ -179,7 +188,16 @@ export default function Lobby() {
         {/* Game code */}
         <div className="text-center space-y-1">
           <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">Code de la partie</p>
-          <h2 className="text-5xl font-black font-mono tracking-widest text-stone-900">{code}</h2>
+          <div className="flex items-center justify-center gap-2">
+            <h2 className="text-5xl font-black font-mono tracking-widest text-stone-900">{code}</h2>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="mt-1 h-9 px-3 rounded-xl bg-stone-100 text-stone-500 text-xs font-bold transition-colors active:scale-95 hover:bg-stone-200"
+            >
+              {copied ? 'Copié ✓' : 'Copier'}
+            </button>
+          </div>
           <p className="text-stone-400 text-sm">Partage ce code à tes amis</p>
         </div>
 
