@@ -8,3 +8,9 @@ body {
   /* Prevent pull-to-refresh bouncing */
   overscroll-behavior: none;
 }
+
+/* Remove transitions from all buttons — prevents tap target shifting
+   during CSS transforms which causes first-tap misses on mobile */
+button {
+  transition: none !important;
+}

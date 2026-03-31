@@ -172,8 +172,11 @@ export default function GameScreen({ code }: Props) {
                 <DifficultyDot d={currentWord.difficulty} />
               </div>
 
-              {/* THE WORD */}
-              <p className="text-6xl font-black text-stone-900 text-center leading-none py-3 break-words">
+              {/* THE WORD — font scales down for long words so it stays on one line */}
+              <p
+                className="font-black text-stone-900 text-center leading-none py-3 whitespace-nowrap"
+                style={{ fontSize: `${Math.min(60, Math.max(22, Math.floor(280 / currentWord.word.length * 1.6)))}px` }}
+              >
                 {currentWord.word}
               </p>
 
