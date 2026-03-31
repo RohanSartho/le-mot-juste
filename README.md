@@ -1,73 +1,94 @@
-# React + TypeScript + Vite
+# 🇫🇷 Le Mot Juste — *"The Right Word"*
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A real-time multiplayer French vocabulary game built around charades. One player describes a French word using only French sentences — no gestures, no translations — while everyone else shouts their guess. First to get it right wins the round.
 
-Currently, two official plugins are available:
+**Live:** [le-mot-juste.vercel.app](https://le-mot-juste.vercel.app)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## How to Play
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Create a game and share the code (e.g. `CHAT-4821`) or the URL with friends
+2. Everyone joins by entering their name — no account needed
+3. The describer sees a word and must explain it in French
+4. Forbidden words are shown — you can't use them in your description
+5. Hit **Correct** when someone guesses it, or **Passer** to skip
+6. Roles rotate after each turn. Most points after all rounds wins.
 
-## Expanding the ESLint configuration
+**Solo mode** is also supported — practice your own vocabulary with just one player.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Word Database
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **5,000 words** stored in Firebase Firestore, sourced and filtered from [Lexique 4](http://www.lexique.org/) — an open-source French lexical database
+- Words are tagged with:
+  - **Category** — one of 8 themes: Food & Places, Animals, Objects, Travel, Emotions, Verbs, Nature, Clothing
+  - **Difficulty** — derived from word frequency rank in Lexique 4:
+    - `easy` — frequency ≥ 50 per million words
+    - `medium` — frequency ≥ 5 per million
+    - `hard` — frequency < 5 per million
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## Forbidden Words
+
+Each word has up to 3 **forbidden words** — related terms the describer cannot say. These are generated at seed time by sampling other words from the same category in the Firestore collection, picking semantically close neighbours. Forbidden words make descriptions harder and more creative.
+
+Example — *romantisme*: forbidden words might be `amour`, `sentiment`, `poème`
+
+---
+
+## Hint Phrases
+
+Each word has an optional **hint question** — a coaching prompt the describer can reveal mid-turn at a cost of −1 point. These are generated from 10 template pools (one per category × part of speech), each with 7 prompt variants, randomly assigned per word during seeding.
+
+Example templates:
+- *"Quel sentiment évoque ce mot ?"* (Emotions)
+- *"Dans quel lieu trouve-t-on cela ?"* (Food & Places)
+- *"Est-ce un objet qu'on utilise à la maison ?"* (Objects)
+
+---
+
+## Scoring
+
+| Situation | Points |
+|---|---|
+| Word guessed correctly | +2 to describer |
+| Word guessed with hint revealed | +1 to describer |
+| Passed or timed out | 0 |
+
+Guesser point tracking is planned for a future version.
+
+---
+
+## Stack
+
+| Layer | Tech |
+|---|---|
+| Frontend | Vite + React + TypeScript |
+| Styling | Tailwind CSS v4 |
+| State | Zustand |
+| Database | Firebase Firestore |
+| Auth | None — name only, stored in localStorage |
+| Hosting | Vercel |
+
+---
+
+## Local Development
+
+```bash
+npm install
+npm run dev        # starts on localhost:3000, exposed on local network for phone testing
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Requires a `.env.local` with Firebase config:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
 ```
