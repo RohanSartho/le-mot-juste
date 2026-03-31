@@ -201,20 +201,24 @@ export default function Home() {
                 </select>
               </Row>
 
-              <Row label="Difficulté">
-                {(['all', 'easy', 'medium', 'hard'] as const).map(d => (
-                  <Pill key={d} active={settings.difficulty === d} onClick={() => set('difficulty', d)}>
-                    {d === 'all' ? 'Tous' : d === 'easy' ? 'Facile' : d === 'medium' ? 'Moyen' : 'Difficile'}
-                  </Pill>
-                ))}
-              </Row>
+              {/* Difficulty — full width so all 4 fit on one line */}
+              <div className="py-2.5 space-y-2">
+                <span className="text-sm font-medium text-stone-600">Difficulté</span>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {(['all', 'easy', 'medium', 'hard'] as const).map(d => (
+                    <Pill key={d} active={settings.difficulty === d} onClick={() => set('difficulty', d)}>
+                      {d === 'all' ? 'Tous' : d === 'easy' ? 'Facile' : d === 'medium' ? 'Moyen' : 'Dur'}
+                    </Pill>
+                  ))}
+                </div>
+              </div>
 
-              {/* Categories — full width row */}
+              {/* Categories — 2-column grid, clean alignment */}
               <div className="py-2.5 space-y-2">
                 <span className="text-sm font-medium text-stone-600">
                   Catégories <span className="text-xs text-stone-300 font-normal">(toutes si vide)</span>
                 </span>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5">
                   {CATEGORIES.map(cat => (
                     <Pill key={cat} active={settings.categories.includes(cat)} onClick={() => toggleCategory(cat)}>
                       {CATEGORY_FR[cat] ?? cat}
