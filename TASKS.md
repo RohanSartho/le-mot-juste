@@ -130,6 +130,10 @@
 - [x] **Solo mode** — "Solo" in player selector; lobby starts with 1 player; rotation stays on same player
 - [x] **Copy code button** — lobby, with "Copié ✓" state
 - [x] **Dynamic word font size** — scales by word length, `whitespace-nowrap`, never splits a word
+- [x] **README rewritten** — project overview, word DB, forbidden words, hints, scoring, stack
+- [x] **GitHub about** — description + live URL + 🇫🇷 ⚜️ flags
+- [x] **Landing page** — 🇫🇷 flag added before title
+- [x] **README Quebec flag** — actual Quebec flag image (Wikimedia SVG) embedded inline in heading
 
 ### Scoring
 - [x] Describer-only scoring: +2 correct, +1 correct w/ hint, 0 pass
