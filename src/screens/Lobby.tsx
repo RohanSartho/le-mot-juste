@@ -89,6 +89,16 @@ export default function Lobby() {
     }
   }
 
+  // ── copy state must live before any early returns (Rules of Hooks) ──────
+  const [copied, setCopied] = useState(false)
+  const handleCopy = useCallback(() => {
+    if (!code) return
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }, [code])
+
   const Shell = ({ children }: { children: React.ReactNode }) => (
     <div className="min-h-dvh bg-[#fdf7ef] flex flex-col items-center">
       <div className="w-full max-w-sm flex flex-col flex-1">{children}</div>
@@ -169,15 +179,6 @@ export default function Lobby() {
   }
 
   // ── Lobby ─────────────────────────────────────────────────────────────────
-  const [copied, setCopied] = useState(false)
-  const handleCopy = useCallback(() => {
-    if (!code) return
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    })
-  }, [code])
-
   const players = session ? Object.entries(session.scores) : []
   const expectedCount = session?.settings.max_players ?? '?'
 
