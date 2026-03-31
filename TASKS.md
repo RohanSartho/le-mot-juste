@@ -117,6 +117,26 @@
 
 ---
 
+## Phase 7: Bug Fixes + Solo Mode + Scoring Overhaul ✅ COMPLETE
+
+### Bugs fixed
+- [x] **404 on direct URL paste** — `vercel.json` SPA rewrite (`/(.*) → /index.html`)
+- [x] **React error #310** — hooks after early returns in Lobby; moved before conditionals
+- [x] **Button double-tap on mobile** — global `button { transition: none }` in `index.css`
+- [x] **Play again button stuck disabled** — `setStarting(false)` moved to `finally` block
+- [x] **Play again showed stuck lobby** — removed `initialised.current` guard from `onSnapshot`; state always derived from snapshot
+
+### Features
+- [x] **Solo mode** — "Solo" in player selector; lobby starts with 1 player; rotation stays on same player
+- [x] **Copy code button** — lobby, with "Copié ✓" state
+- [x] **Dynamic word font size** — scales by word length, `whitespace-nowrap`, never splits a word
+
+### Scoring
+- [x] Describer-only scoring: +2 correct, +1 correct w/ hint, 0 pass
+- [x] Guesser tracking moved to post-v1 backlog
+
+---
+
 ## ⚠️ Pending — Do Before Next Session
 
 ### Firestore seed re-run required
