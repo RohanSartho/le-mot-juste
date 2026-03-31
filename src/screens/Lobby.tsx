@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase'
@@ -20,8 +20,6 @@ export default function Lobby() {
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState('')
 
-  const initialised = useRef(false)
-
   useEffect(() => {
     if (!code) { setPageState('error'); setError('Code invalide'); return }
 
@@ -36,11 +34,9 @@ export default function Lobby() {
         if (s.status === 'finished') { setPageState('finished'); return }
         if (s.status === 'playing') { setPageState('playing'); return }
 
-        if (!initialised.current) {
-          initialised.current = true
-          const alreadyIn = !!(playerName && playerName in s.scores)
-          setPageState(alreadyIn ? 'lobby' : 'join')
-        }
+        // Always re-derive lobby vs join so resets (play again) work correctly
+        const alreadyIn = !!(playerName && playerName in s.scores)
+        setPageState(alreadyIn ? 'lobby' : 'join')
       },
       (err) => {
         console.error('[Lobby] snapshot error:', err)
@@ -49,7 +45,7 @@ export default function Lobby() {
       }
     )
 
-    return () => { unsub(); initialised.current = false }
+    return () => unsub()
   }, [code])
 
   async function handleJoin() {
