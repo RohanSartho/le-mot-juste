@@ -106,7 +106,7 @@ export default function Home() {
 
         {/* Header */}
         <div className="text-center pt-10 pb-5 px-5">
-          <h1 className="text-4xl font-black text-stone-900 tracking-tighter">Le Mot Juste</h1>
+          <h1 className="text-4xl font-black text-stone-900 tracking-tighter">🇫🇷 Le Mot Juste</h1>
           <p className="text-stone-400 text-sm mt-1 font-medium">Charades en français</p>
         </div>
 

@@ -1,6 +1,8 @@
-# 🇫🇷 Le Mot Juste — *"The Right Word"*
+# 🇫🇷 ⚜️ Le Mot Juste — *"The Right Word"*
 
 A real-time multiplayer French vocabulary game built around charades. One player describes a French word using only French sentences — no gestures, no translations — while everyone else shouts their guess. First to get it right wins the round.
+
+Built for French learners and Francophiles — whether you're learning Parisian French 🇫🇷 or Québécois ⚜️.
 
 **Live:** [le-mot-juste.vercel.app](https://le-mot-juste.vercel.app)
 
