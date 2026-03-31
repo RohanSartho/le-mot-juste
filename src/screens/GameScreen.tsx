@@ -227,7 +227,7 @@ export default function GameScreen({ code }: Props) {
                     <button
                       type="button"
                       onClick={() => { setHintRevealed(true); setHintUsed(true) }}
-                      className="w-full py-3 rounded-2xl border-2 border-dashed border-violet-300 text-violet-500 text-sm font-semibold active:scale-95 transition-transform"
+                      className="w-full py-3 rounded-2xl border-2 border-dashed border-violet-300 text-violet-500 text-sm font-semibold active:scale-95 [touch-action:manipulation]"
                     >
                       🪄 Révéler la question guide (−1 pt)
                     </button>
@@ -248,7 +248,7 @@ export default function GameScreen({ code }: Props) {
             type="button"
             onClick={() => handleAdvance(false)}
             disabled={isAdvancing}
-            className="flex-1 h-16 bg-white border-2 border-stone-200 text-stone-600 rounded-2xl text-base font-bold active:scale-95 transition-transform shadow-sm disabled:opacity-40"
+            className="flex-1 h-16 bg-white border-2 border-stone-200 text-stone-600 rounded-2xl text-base font-bold active:scale-95 [touch-action:manipulation] shadow-sm disabled:opacity-40"
           >
             Passer
           </button>
@@ -256,7 +256,7 @@ export default function GameScreen({ code }: Props) {
             type="button"
             onClick={() => handleAdvance(true)}
             disabled={isAdvancing}
-            className="flex-[2] h-16 bg-emerald-600 text-white rounded-2xl text-base font-bold active:scale-95 transition-transform shadow-sm disabled:opacity-40"
+            className="flex-[2] h-16 bg-emerald-600 text-white rounded-2xl text-base font-bold active:scale-95 [touch-action:manipulation] shadow-sm disabled:opacity-40"
           >
             ✓ Correct !
           </button>
