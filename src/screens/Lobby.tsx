@@ -81,6 +81,7 @@ export default function Lobby() {
       // onSnapshot will fire for all devices
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Impossible de démarrer')
+    } finally {
       setStarting(false)
     }
   }
