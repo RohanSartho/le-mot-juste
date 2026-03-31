@@ -21,7 +21,7 @@ function DifficultyDot({ d }: { d: Word['difficulty'] }) {
 export default function GameScreen({ code }: Props) {
   const { session, playerName } = useSessionStore()
   const [currentWord, setCurrentWord] = useState<Word | null>(null)
-  const [timeLeft, setTimeLeft] = useState(session?.settings.timer_seconds ?? 60)
+  const [timeLeft, setTimeLeft] = useState<number>(session?.settings.timer_seconds ?? 60)
   const [hintUsed, setHintUsed] = useState(false)
   const [hintRevealed, setHintRevealed] = useState(false)
   const advancing = useRef(false)
