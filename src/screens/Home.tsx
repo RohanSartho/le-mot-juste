@@ -23,7 +23,7 @@ const DEFAULT_SETTINGS: GameSettings = {
   words_per_round: 5,
   timer_seconds: 60,
   taboo_enabled: true,
-  max_players: 4,
+  max_players: 2,
 }
 
 function Pill({
@@ -212,22 +212,45 @@ export default function Home() {
                 </select>
               </Row>
 
-              {/* Stacked blocks — more options, needs room to wrap */}
-              <Block label="Difficulté">
-                {(['all', 'easy', 'medium', 'hard'] as const).map(d => (
-                  <Pill key={d} active={settings.difficulty === d} onClick={() => set('difficulty', d)}>
-                    {d === 'all' ? 'Tous niveaux' : d === 'easy' ? 'Facile' : d === 'medium' ? 'Moyen' : 'Difficile'}
-                  </Pill>
-                ))}
-              </Block>
+              {/* Difficulté — 4 equal columns */}
+              <div className="py-3 space-y-2">
+                <span className="text-sm font-semibold text-stone-700">Difficulté</span>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {(['all', 'easy', 'medium', 'hard'] as const).map(d => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => set('difficulty', d)}
+                      className={`py-2 rounded-lg text-xs font-bold tracking-wide transition-all active:scale-95 text-center ${
+                        settings.difficulty === d ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'
+                      }`}
+                    >
+                      {d === 'all' ? 'Tous' : d === 'easy' ? 'Facile' : d === 'medium' ? 'Moyen' : 'Dur'}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-              <Block label="Catégories" sub="(toutes si vide)">
-                {CATEGORIES.map(cat => (
-                  <Pill key={cat} active={settings.categories.includes(cat)} onClick={() => toggleCategory(cat)}>
-                    {CATEGORY_FR[cat] ?? cat}
-                  </Pill>
-                ))}
-              </Block>
+              {/* Catégories — 2 equal columns */}
+              <div className="py-3 space-y-2">
+                <span className="text-sm font-semibold text-stone-700">
+                  Catégories <span className="text-xs text-stone-400 font-normal ml-1.5">(toutes si vide)</span>
+                </span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {CATEGORIES.map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => toggleCategory(cat)}
+                      className={`py-2 rounded-lg text-xs font-bold tracking-wide transition-all active:scale-95 text-center ${
+                        settings.categories.includes(cat) ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'
+                      }`}
+                    >
+                      {CATEGORY_FR[cat] ?? cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Taboo toggle */}
               <div className="flex items-center justify-between py-2.5">

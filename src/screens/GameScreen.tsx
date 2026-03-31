@@ -25,6 +25,7 @@ export default function GameScreen({ code }: Props) {
   const [hintUsed, setHintUsed] = useState(false)
   const [hintRevealed, setHintRevealed] = useState(false)
   const advancing = useRef(false)
+  const [isAdvancing, setIsAdvancing] = useState(false)
 
   const isDescriber = session?.current_describer === playerName
 
@@ -54,6 +55,7 @@ export default function GameScreen({ code }: Props) {
   async function handleAdvance(correct: boolean) {
     if (!session || !isDescriber || advancing.current) return
     advancing.current = true
+    setIsAdvancing(true)
     try {
       const players = Object.keys(session.scores)
       const dIdx = players.indexOf(session.current_describer!)
@@ -102,6 +104,7 @@ export default function GameScreen({ code }: Props) {
       )
     } finally {
       advancing.current = false
+      setIsAdvancing(false)
     }
   }
 
@@ -242,14 +245,18 @@ export default function GameScreen({ code }: Props) {
         {/* Controls */}
         <div className="px-5 pb-8 pt-4 flex gap-3">
           <button
+            type="button"
             onClick={() => handleAdvance(false)}
-            className="flex-1 h-16 bg-white border-2 border-stone-200 text-stone-600 rounded-2xl text-base font-bold active:scale-95 transition-transform shadow-sm"
+            disabled={isAdvancing}
+            className="flex-1 h-16 bg-white border-2 border-stone-200 text-stone-600 rounded-2xl text-base font-bold active:scale-95 transition-transform shadow-sm disabled:opacity-40"
           >
             Passer
           </button>
           <button
+            type="button"
             onClick={() => handleAdvance(true)}
-            className="flex-[2] h-16 bg-emerald-600 text-white rounded-2xl text-base font-bold active:scale-95 transition-transform shadow-sm"
+            disabled={isAdvancing}
+            className="flex-[2] h-16 bg-emerald-600 text-white rounded-2xl text-base font-bold active:scale-95 transition-transform shadow-sm disabled:opacity-40"
           >
             ✓ Correct !
           </button>
