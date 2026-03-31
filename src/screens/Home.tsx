@@ -52,17 +52,6 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   )
 }
 
-// Stacked: label on top, options wrap below
-function Block({ label, sub, children }: { label: string; sub?: string; children: React.ReactNode }) {
-  return (
-    <div className="py-3 space-y-2">
-      <span className="text-sm font-semibold text-stone-700">
-        {label}{sub && <span className="text-xs text-stone-400 font-normal ml-1.5">{sub}</span>}
-      </span>
-      <div className="flex flex-wrap gap-1.5">{children}</div>
-    </div>
-  )
-}
 
 export default function Home() {
   const navigate = useNavigate()

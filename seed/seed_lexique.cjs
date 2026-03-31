@@ -228,6 +228,17 @@ function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
+// Pick N forbidden words from the category pool, excluding the word itself
+function getForbiddenWords(lemme, category, n = 3) {
+  const pool = CATEGORY_LISTS[category] ?? []
+  const lower = lemme.toLowerCase()
+  const candidates = pool.filter(w => w !== lower && !lower.startsWith(w) && !w.startsWith(lower))
+  if (candidates.length === 0) return []
+  // Shuffle and take first N
+  const shuffled = candidates.slice().sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, Math.min(n, shuffled.length))
+}
+
 function getHintQuestion(category, cgram) {
   const pool = HINT_TEMPLATES[category] ?? HINT_TEMPLATES['Divers']
   return pick(pool)
@@ -283,12 +294,13 @@ async function main() {
     const category = getCategory(lemme, cgram)
     const hints = getHints(cgram, genre, difficulty)
     const hint_question = getHintQuestion(category, cgram)
+    const forbidden_words = getForbiddenWords(lemme, category)
 
     words.push({
       word: lemme,
       category,
       difficulty,
-      forbidden_words: [],
+      forbidden_words,
       hints,
       hint_question,
       language: 'fr',
@@ -305,8 +317,11 @@ async function main() {
   console.log(`✅  Parsed ${words.length} words — uploading to Firestore…`)
 
   // Batch write (Firestore max = 500 ops per batch)
-  const BATCH_SIZE = 400
+  const BATCH_SIZE = 200  // smaller batches to stay under free tier bandwidth limits
+  const DELAY_MS = 2000   // 2s between batches
   let uploaded = 0
+
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
   for (let i = 0; i < words.length; i += BATCH_SIZE) {
     const batch = writeBatch(db)
@@ -318,9 +333,26 @@ async function main() {
       batch.set(ref, w)
     }
 
-    await batch.commit()
+    let retries = 0
+    while (true) {
+      try {
+        await batch.commit()
+        break
+      } catch (e) {
+        if (e.code === 'resource-exhausted' && retries < 5) {
+          const wait = DELAY_MS * Math.pow(2, retries)
+          console.log(`   ⏳ Rate limited — retrying in ${wait / 1000}s…`)
+          await sleep(wait)
+          retries++
+        } else {
+          throw e
+        }
+      }
+    }
+
     uploaded += chunk.length
     console.log(`   ${uploaded} / ${words.length}`)
+    if (i + BATCH_SIZE < words.length) await sleep(DELAY_MS)
   }
 
   console.log(`🎉  Done! ${uploaded} words uploaded to Firestore collection 'words'.`)
