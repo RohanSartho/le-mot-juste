@@ -3,73 +3,57 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { joinSession, startGame } from '../lib/sessions'
+import { fetchWordPool, pickNextWordId } from '../lib/words'
 import { useSessionStore } from '../stores/sessionStore'
 import type { GameSession } from '../types'
+import GameScreen from './GameScreen'
+import EndGameScreen from './EndGameScreen'
 
 export default function Lobby() {
   const { code } = useParams<{ code: string }>()
   const navigate = useNavigate()
   const { session, playerName, setSession, setPlayerName, isHost } = useSessionStore()
 
-  const [pageState, setPageState] = useState<'loading' | 'join' | 'lobby' | 'playing' | 'error'>('loading')
+  const [pageState, setPageState] = useState<'loading' | 'join' | 'lobby' | 'playing' | 'finished' | 'error'>('loading')
   const [nameInput, setNameInput] = useState(playerName)
   const [joining, setJoining] = useState(false)
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState('')
 
-  // Track whether we've set the initial page view — subsequent snapshots
-  // should update session data without resetting which screen is shown
   const initialised = useRef(false)
 
   useEffect(() => {
-    if (!code) {
-      setPageState('error')
-      setError('Invalid game code')
-      return
-    }
+    if (!code) { setPageState('error'); setError('Code invalide'); return }
 
-    // onSnapshot handles both initial load AND real-time updates in one subscription
     const unsub = onSnapshot(
       doc(db, 'game_sessions', code),
       (snap) => {
-        if (!snap.exists()) {
-          setPageState('error')
-          setError('Game not found or expired')
-          return
-        }
+        if (!snap.exists()) { setPageState('error'); setError('Partie introuvable ou expirée'); return }
 
         const s = snap.data() as GameSession
         setSession(s)
 
-        // Game started — Phase 3 will replace this placeholder
-        if (s.status === 'playing' || s.status === 'finished') {
-          setPageState('playing')
-          return
-        }
+        if (s.status === 'finished') { setPageState('finished'); return }
+        if (s.status === 'playing') { setPageState('playing'); return }
 
-        // Only decide join vs lobby on the first snapshot
         if (!initialised.current) {
           initialised.current = true
           const alreadyIn = !!(playerName && playerName in s.scores)
           setPageState(alreadyIn ? 'lobby' : 'join')
         }
-        // Subsequent snapshots (other players joining) just update session via setSession above
       },
       (err) => {
         console.error('[Lobby] snapshot error:', err)
         setPageState('error')
-        setError('Connection error — check your internet and try again')
+        setError('Erreur de connexion — vérifie ta connexion internet')
       }
     )
 
-    return () => {
-      unsub()
-      initialised.current = false
-    }
+    return () => { unsub(); initialised.current = false }
   }, [code])
 
   async function handleJoin() {
-    if (!nameInput.trim()) { setError('Enter your name'); return }
+    if (!nameInput.trim()) { setError('Entre ton prénom'); return }
     if (!code) return
     setJoining(true)
     setError('')
@@ -79,161 +63,191 @@ export default function Lobby() {
       setSession(updated)
       setPageState('lobby')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not join game')
+      setError(e instanceof Error ? e.message : 'Impossible de rejoindre')
     } finally {
       setJoining(false)
     }
   }
 
   async function handleStart() {
-    if (!code) return
+    if (!code || !session) return
     setStarting(true)
     setError('')
     try {
-      await startGame(code)
-      // onSnapshot will fire for other players — host transitions immediately
-      setPageState('playing')
+      // Fetch word pool from Firestore, fall back to static list
+      const wordPool = await fetchWordPool(session.settings)
+      const players = Object.keys(session.scores)
+      const firstDescriber = players[0]
+      const firstWordId = pickNextWordId(wordPool, [])
+      if (!firstWordId) throw new Error('Aucun mot disponible pour ces filtres')
+
+      await startGame(code, firstWordId, firstDescriber, wordPool)
+      // onSnapshot will fire for all devices
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not start game')
+      setError(e instanceof Error ? e.message : 'Impossible de démarrer')
       setStarting(false)
     }
   }
 
-  // ── Loading ──────────────────────────────────────────────────────────────
+  const Shell = ({ children }: { children: React.ReactNode }) => (
+    <div className="min-h-dvh bg-[#fdf7ef] flex flex-col items-center">
+      <div className="w-full max-w-sm flex flex-col flex-1">{children}</div>
+    </div>
+  )
+
+  if (pageState === 'playing') return <GameScreen code={code!} />
+  if (pageState === 'finished') return <EndGameScreen />
+
   if (pageState === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <p className="text-gray-500 animate-pulse">Loading...</p>
-      </div>
+      <Shell>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-stone-200 border-t-stone-500 animate-spin" />
+        </div>
+      </Shell>
     )
   }
 
-  // ── Error ────────────────────────────────────────────────────────────────
   if (pageState === 'error') {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <p className="text-red-400">{error}</p>
-          <button onClick={() => navigate('/')} className="text-gray-400 hover:text-white text-sm underline">
-            ← Back to home
+      <Shell>
+        <div className="flex-1 flex flex-col items-center justify-center px-5 gap-4">
+          <p className="text-rose-500 text-center">{error}</p>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="text-stone-400 text-sm underline"
+          >
+            ← Retour
           </button>
         </div>
-      </div>
+      </Shell>
     )
   }
 
-  // ── Game in progress — Phase 3 placeholder ───────────────────────────────
-  if (pageState === 'playing') {
-    return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-4">
-        <div className="text-center space-y-3">
-          <p className="text-2xl font-bold">🎮 Game in progress</p>
-          <p className="text-gray-400 text-sm">Game screen coming in Phase 3</p>
-          <p className="text-gray-600 font-mono text-xs">{code}</p>
-          <button onClick={() => navigate('/')} className="text-gray-500 hover:text-white text-sm underline mt-4 block">
-            ← Back to home
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Join form ────────────────────────────────────────────────────────────
   if (pageState === 'join') {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-4">
-        <div className="w-full max-w-sm">
-          <div className="text-center mb-8">
-            <p className="text-gray-400 text-sm mb-1">Joining game</p>
-            <h2 className="text-4xl font-bold font-mono tracking-widest">{code}</h2>
+      <Shell>
+        <div className="flex-1 flex flex-col justify-center px-5 gap-5">
+          <div className="text-center">
+            <p className="text-stone-400 text-xs uppercase tracking-widest mb-1">Rejoindre la partie</p>
+            <h2 className="text-4xl font-black font-mono tracking-widest text-stone-900">{code}</h2>
             {session && (
-              <p className="text-gray-500 text-sm mt-2">Hosted by {session.host_name}</p>
+              <p className="text-stone-400 text-sm mt-1">Organisée par {session.host_name}</p>
             )}
           </div>
-          <div className="bg-gray-900 rounded-xl p-6 space-y-4">
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Your name</label>
-              <input
-                value={nameInput}
-                onChange={e => setNameInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleJoin()}
-                placeholder="e.g. Marie"
-                autoFocus
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors"
-              />
-            </div>
-            {error && <p className="text-red-400 text-sm">{error}</p>}
-            <button
-              onClick={handleJoin}
-              disabled={joining}
-              className="w-full bg-white text-gray-950 font-semibold rounded-lg py-3 hover:bg-gray-100 disabled:opacity-50 transition-colors"
-            >
-              {joining ? 'Joining...' : 'Join game →'}
-            </button>
+
+          <div className="bg-white rounded-2xl px-4 py-3 border border-amber-100 shadow-sm">
+            <label className="block text-xs font-semibold text-stone-400 uppercase tracking-widest mb-1.5">
+              Ton prénom
+            </label>
+            <input
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleJoin()}
+              placeholder="ex. Marie"
+              autoFocus
+              className="w-full bg-transparent text-stone-900 text-base font-medium placeholder-stone-300 focus:outline-none"
+            />
           </div>
+
+          {error && <p className="text-rose-500 text-sm text-center">{error}</p>}
         </div>
-      </div>
+
+        <div className="px-5 pb-8 pt-3">
+          <button
+            type="button"
+            onClick={handleJoin}
+            disabled={joining}
+            className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform disabled:opacity-50"
+          >
+            {joining ? 'Connexion...' : 'Rejoindre →'}
+          </button>
+        </div>
+      </Shell>
     )
   }
 
-  // ── Lobby ────────────────────────────────────────────────────────────────
+  // ── Lobby ─────────────────────────────────────────────────────────────────
   const players = session ? Object.entries(session.scores) : []
+  const expectedCount = session?.settings.max_players ?? '?'
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-4">
+    <Shell>
+      <div className="flex-1 overflow-y-auto px-5 py-8 space-y-4">
 
-        <div className="text-center">
-          <p className="text-gray-500 text-xs uppercase tracking-widest mb-1">Game code</p>
-          <h2 className="text-4xl font-bold font-mono tracking-widest">{code}</h2>
-          <p className="text-gray-500 text-sm mt-2">Share with friends to join</p>
+        {/* Game code */}
+        <div className="text-center space-y-1">
+          <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">Code de la partie</p>
+          <h2 className="text-5xl font-black font-mono tracking-widest text-stone-900">{code}</h2>
+          <p className="text-stone-400 text-sm">Partage ce code à tes amis</p>
         </div>
 
-        <div className="bg-gray-900 rounded-xl p-5">
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">
-            Players · {players.length}
-          </p>
-          <ul className="space-y-2">
+        {/* Players list */}
+        <div className="bg-white rounded-2xl p-5 border border-amber-100 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">Joueurs</p>
+            <span className="text-xs font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-full">
+              {players.length} / {expectedCount}
+            </span>
+          </div>
+          <ul className="space-y-2.5">
             {players.map(([name]) => (
               <li key={name} className="flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
-                <span className={name === playerName ? 'font-semibold text-white' : 'text-gray-300'}>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                <span className={`flex-1 text-sm ${name === playerName ? 'font-bold text-stone-900' : 'text-stone-600'}`}>
                   {name}
                 </span>
                 {name === session?.host_name && (
-                  <span className="ml-auto text-xs text-gray-600">host</span>
+                  <span className="text-xs text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">host</span>
                 )}
               </li>
             ))}
           </ul>
         </div>
 
+        {/* Settings summary */}
         {session && (
-          <div className="bg-gray-900 rounded-xl px-5 py-3 flex gap-4 text-sm text-gray-500">
-            <span>{session.settings.difficulty === 'all' ? 'All levels' : session.settings.difficulty}</span>
-            <span>·</span>
-            <span>{session.settings.rounds} {session.settings.rounds === 1 ? 'round' : 'rounds'}</span>
-            <span>·</span>
-            <span>{session.settings.timer_seconds}s</span>
+          <div className="bg-white rounded-2xl p-5 border border-amber-100 shadow-sm">
+            <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-3">Paramètres</p>
+            <div className="grid grid-cols-2 gap-y-2 text-sm">
+              <span className="text-stone-400">Mots / tour</span>
+              <span className="font-semibold text-stone-700">{session.settings.words_per_round}</span>
+              <span className="text-stone-400">Manches</span>
+              <span className="font-semibold text-stone-700">{session.settings.rounds}</span>
+              <span className="text-stone-400">Timer</span>
+              <span className="font-semibold text-stone-700">{session.settings.timer_seconds}s</span>
+              <span className="text-stone-400">Difficulté</span>
+              <span className="font-semibold text-stone-700">
+                {session.settings.difficulty === 'all' ? 'Tous niveaux' : session.settings.difficulty}
+              </span>
+              <span className="text-stone-400">Tabou</span>
+              <span className="font-semibold text-stone-700">{session.settings.taboo_enabled ? 'Activé' : 'Désactivé'}</span>
+            </div>
           </div>
         )}
 
-        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+        {error && <p className="text-rose-500 text-sm text-center">{error}</p>}
+      </div>
 
+      <div className="px-5 pb-8 pt-3">
         {isHost() ? (
           <button
+            type="button"
             onClick={handleStart}
-            disabled={starting || players.length < 1}
-            className="w-full bg-white text-gray-950 font-semibold rounded-lg py-3 hover:bg-gray-100 disabled:opacity-50 transition-colors"
+            disabled={starting || players.length < 2}
+            className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform disabled:opacity-50"
           >
-            {starting ? 'Starting...' : 'Start game →'}
+            {starting ? 'Démarrage...' : players.length < 2 ? 'En attente de joueurs…' : 'Démarrer la partie →'}
           </button>
         ) : (
-          <p className="text-center text-gray-500 text-sm py-3">
-            Waiting for <span className="text-gray-300">{session?.host_name}</span> to start…
-          </p>
+          <div className="h-14 flex items-center justify-center">
+            <p className="text-stone-400 text-sm text-center">
+              En attente de <span className="font-semibold text-stone-600">{session?.host_name}</span>…
+            </p>
+          </div>
         )}
       </div>
-    </div>
+    </Shell>
   )
 }

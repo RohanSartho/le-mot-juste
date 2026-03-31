@@ -26,3 +26,6 @@ node_modules
 .env.local
 dist
 .DS_Store
+
+# Large source data files — not needed in repo (seed script reads these locally)
+seed/*.tsv

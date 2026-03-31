@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+body {
+  background-color: #fdf7ef;
+  /* Prevent double-tap zoom and tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  /* Prevent pull-to-refresh bouncing */
+  overscroll-behavior: none;
+}

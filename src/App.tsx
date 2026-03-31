@@ -7,9 +7,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        {/* Lobby handles playing/finished state internally — renders GameScreen or EndGameScreen */}
         <Route path="/game/:code" element={<Lobby />} />
-        {/* Phase 3 will add: /game/:code/play */}
-        {/* Phase 4 will add: /game/:code/end  */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

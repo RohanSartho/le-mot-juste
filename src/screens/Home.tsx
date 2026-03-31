@@ -2,13 +2,35 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createSession } from '../lib/sessions'
 import { useSessionStore } from '../stores/sessionStore'
+import { CATEGORIES } from '../lib/words'
 import type { GameSettings } from '../types'
 
 const DEFAULT_SETTINGS: GameSettings = {
-  categories: [],   // empty = all categories
+  categories: [],
   difficulty: 'all',
-  rounds: 3,
+  rounds: 1,
+  words_per_round: 5,
   timer_seconds: 60,
+  taboo_enabled: true,
+  max_players: 4,
+}
+
+function Pill({
+  active, onClick, children,
+}: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`h-10 px-4 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
+        active
+          ? 'bg-stone-800 text-white shadow-sm'
+          : 'bg-white text-stone-500 border border-stone-200'
+      }`}
+    >
+      {children}
+    </button>
+  )
 }
 
 export default function Home() {
@@ -22,8 +44,21 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  function set<K extends keyof GameSettings>(key: K, value: GameSettings[K]) {
+    setSettings(s => ({ ...s, [key]: value }))
+  }
+
+  function toggleCategory(cat: string) {
+    setSettings(s => ({
+      ...s,
+      categories: s.categories.includes(cat)
+        ? s.categories.filter(c => c !== cat)
+        : [...s.categories, cat],
+    }))
+  }
+
   async function handleCreate() {
-    if (!name.trim()) { setError('Enter your name'); return }
+    if (!name.trim()) { setError('Entre ton prénom'); return }
     setLoading(true)
     setError('')
     try {
@@ -32,134 +67,228 @@ export default function Home() {
       setSession(session)
       navigate(`/game/${session.id}`)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong')
+      setError(e instanceof Error ? e.message : 'Erreur inattendue')
     } finally {
       setLoading(false)
     }
   }
 
   function handleJoin() {
-    if (!name.trim()) { setError('Enter your name'); return }
-    if (!joinCode.trim()) { setError('Enter a game code'); return }
-    // Save name now — join form on the next screen will use it
+    if (!name.trim()) { setError('Entre ton prénom'); return }
+    if (!joinCode.trim()) { setError('Entre le code de la partie'); return }
     setPlayerName(name.trim())
     navigate(`/game/${joinCode.trim().toUpperCase()}`)
   }
 
-  function switchTab(next: 'create' | 'join') {
-    setTab(next)
-    setError('')
-  }
-
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-dvh bg-[#fdf7ef] flex flex-col items-center">
+      <div className="w-full max-w-sm flex flex-col flex-1">
 
         {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold tracking-tight mb-2">Le Mot Juste</h1>
-          <p className="text-gray-400">French vocabulary charades</p>
+        <div className="text-center pt-12 pb-6 px-5">
+          <h1 className="text-4xl font-black text-stone-900 tracking-tight">Le Mot Juste</h1>
+          <p className="text-stone-400 text-sm mt-1">Charades en français</p>
         </div>
 
         {/* Tab switcher */}
-        <div className="flex rounded-lg bg-gray-900 p-1 mb-4">
-          <button
-            onClick={() => switchTab('create')}
-            className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-              tab === 'create' ? 'bg-white text-gray-950' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Create game
-          </button>
-          <button
-            onClick={() => switchTab('join')}
-            className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-              tab === 'join' ? 'bg-white text-gray-950' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Join game
-          </button>
+        <div className="px-5 mb-5">
+          <div className="flex bg-stone-100 rounded-2xl p-1 gap-1">
+            <button
+              type="button"
+              onClick={() => { setTab('create'); setError('') }}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                tab === 'create' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'
+              }`}
+            >
+              Créer
+            </button>
+            <button
+              type="button"
+              onClick={() => { setTab('join'); setError('') }}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                tab === 'join' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'
+              }`}
+            >
+              Rejoindre
+            </button>
+          </div>
         </div>
 
-        {/* Form card */}
-        <div className="bg-gray-900 rounded-xl p-6 space-y-4">
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-5 space-y-4 pb-36">
 
-          {/* Name — shared between both tabs */}
-          <div>
-            <label className="block text-sm text-gray-400 mb-1">Your name</label>
+          {/* Name field */}
+          <div className="bg-white rounded-2xl px-4 py-3 border border-amber-100 shadow-sm">
+            <label className="block text-xs font-semibold text-stone-400 uppercase tracking-widest mb-1.5">
+              Ton prénom
+            </label>
             <input
               value={name}
               onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && (tab === 'create' ? handleCreate() : handleJoin())}
-              placeholder="e.g. Marie"
+              placeholder="ex. Marie"
               autoFocus
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors"
+              className="w-full bg-transparent text-stone-900 text-base font-medium placeholder-stone-300 focus:outline-none"
             />
           </div>
 
+          {tab === 'join' && (
+            <div className="bg-white rounded-2xl px-4 py-3 border border-amber-100 shadow-sm">
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-widest mb-1.5">
+                Code de la partie
+              </label>
+              <input
+                value={joinCode}
+                onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                onKeyDown={e => e.key === 'Enter' && handleJoin()}
+                placeholder="ex. CHAT-4821"
+                className="w-full bg-transparent text-stone-900 text-base font-mono font-semibold tracking-widest placeholder-stone-300 focus:outline-none"
+              />
+            </div>
+          )}
+
           {tab === 'create' && (
             <>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Difficulty</label>
-                <select
-                  value={settings.difficulty}
-                  onChange={e => setSettings(s => ({ ...s, difficulty: e.target.value as GameSettings['difficulty'] }))}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-gray-500 transition-colors"
-                >
-                  <option value="all">All levels</option>
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
-                </select>
+              {/* Words per turn */}
+              <div className="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm space-y-3">
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">
+                  Mots par joueur / tour
+                </p>
+                <div className="flex gap-2">
+                  {[3, 5, 7].map(n => (
+                    <Pill key={n} active={settings.words_per_round === n} onClick={() => set('words_per_round', n)}>
+                      {n}
+                    </Pill>
+                  ))}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Rounds</label>
+              {/* Rounds */}
+              <div className="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm space-y-3">
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">
+                  Nombre de manches
+                </p>
+                <div className="flex gap-2">
+                  {[1, 2, 3].map(n => (
+                    <Pill key={n} active={settings.rounds === n} onClick={() => set('rounds', n)}>
+                      {n}
+                    </Pill>
+                  ))}
+                </div>
+              </div>
+
+              {/* Max players */}
+              <div className="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm space-y-3">
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">
+                  Nombre de joueurs attendus
+                </p>
                 <select
-                  value={settings.rounds}
-                  onChange={e => setSettings(s => ({ ...s, rounds: Number(e.target.value) }))}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-gray-500 transition-colors"
+                  value={settings.max_players}
+                  onChange={e => set('max_players', Number(e.target.value))}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-stone-800 font-medium text-sm focus:outline-none"
                 >
-                  {[1, 2, 3, 5, 7].map(n => (
-                    <option key={n} value={n}>{n} {n === 1 ? 'round' : 'rounds'}</option>
+                  {[2, 3, 4, 5, 6, 7, 8].map(n => (
+                    <option key={n} value={n}>{n} joueurs</option>
                   ))}
                 </select>
               </div>
 
-              <button
-                onClick={handleCreate}
-                disabled={loading}
-                className="w-full bg-white text-gray-950 font-semibold rounded-lg py-3 hover:bg-gray-100 disabled:opacity-50 transition-colors"
-              >
-                {loading ? 'Creating...' : 'Create game →'}
-              </button>
-            </>
-          )}
-
-          {tab === 'join' && (
-            <>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Game code</label>
-                <input
-                  value={joinCode}
-                  onChange={e => setJoinCode(e.target.value.toUpperCase())}
-                  onKeyDown={e => e.key === 'Enter' && handleJoin()}
-                  placeholder="e.g. CHAT-4821"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 font-mono tracking-widest transition-colors"
-                />
+              {/* Timer */}
+              <div className="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm space-y-3">
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">
+                  Durée du timer
+                </p>
+                <div className="flex gap-2">
+                  {([10, 20, 40, 60] as const).map(s => (
+                    <Pill key={s} active={settings.timer_seconds === s} onClick={() => set('timer_seconds', s)}>
+                      {s}s
+                    </Pill>
+                  ))}
+                </div>
               </div>
 
-              <button
-                onClick={handleJoin}
-                className="w-full bg-white text-gray-950 font-semibold rounded-lg py-3 hover:bg-gray-100 transition-colors"
-              >
-                Join game →
-              </button>
+              {/* Difficulty */}
+              <div className="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm space-y-3">
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">
+                  Difficulté
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(['all', 'easy', 'medium', 'hard'] as const).map(d => (
+                    <Pill key={d} active={settings.difficulty === d} onClick={() => set('difficulty', d)}>
+                      {d === 'all' ? 'Tous niveaux' : d === 'easy' ? 'Facile' : d === 'medium' ? 'Moyen' : 'Difficile'}
+                    </Pill>
+                  ))}
+                </div>
+              </div>
+
+              {/* Categories */}
+              <div className="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm space-y-3">
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">
+                  Catégories <span className="text-stone-300 normal-case font-normal">(toutes si vide)</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIES.map(cat => (
+                    <Pill
+                      key={cat}
+                      active={settings.categories.includes(cat)}
+                      onClick={() => toggleCategory(cat)}
+                    >
+                      {cat}
+                    </Pill>
+                  ))}
+                </div>
+              </div>
+
+              {/* Taboo toggle */}
+              <div className="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-stone-700">Mode Tabou</p>
+                    <p className="text-xs text-stone-400 mt-0.5">Mots interdits visibles sur la carte</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => set('taboo_enabled', !settings.taboo_enabled)}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${
+                      settings.taboo_enabled ? 'bg-stone-800' : 'bg-stone-200'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${
+                        settings.taboo_enabled ? 'left-6' : 'left-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
             </>
           )}
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {error && <p className="text-rose-500 text-sm text-center">{error}</p>}
         </div>
+
+        {/* Sticky CTA */}
+        <div className="px-5 pb-8 pt-3 bg-[#fdf7ef] border-t border-amber-100">
+          {tab === 'create' ? (
+            <button
+              type="button"
+              onClick={handleCreate}
+              disabled={loading}
+              className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform disabled:opacity-50"
+            >
+              {loading ? 'Création...' : 'Créer la partie →'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleJoin}
+              className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform"
+            >
+              Rejoindre →
+            </button>
+          )}
+        </div>
+
       </div>
     </div>
   )
