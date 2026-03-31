@@ -33,8 +33,8 @@ function Pill({
     <button
       type="button"
       onClick={onClick}
-      className={`h-8 px-3 rounded-lg text-xs font-semibold transition-all active:scale-95 whitespace-nowrap ${
-        active ? 'bg-stone-800 text-white' : 'bg-stone-100 text-stone-500'
+      className={`h-8 px-3.5 rounded-lg text-xs font-bold tracking-wide transition-all active:scale-95 whitespace-nowrap ${
+        active ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'
       }`}
     >
       {children}
@@ -42,22 +42,22 @@ function Pill({
   )
 }
 
-// Inline row: label on left, controls on right — used for short option sets
+// Inline row: label on left, controls on right
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-2 py-2.5">
-      <span className="text-sm font-medium text-stone-600 shrink-0">{label}</span>
+    <div className="flex items-center justify-between gap-2 py-3">
+      <span className="text-sm font-semibold text-stone-700 shrink-0">{label}</span>
       <div className="flex gap-1.5">{children}</div>
     </div>
   )
 }
 
-// Stacked row: label on top, options below — used for larger option sets
+// Stacked: label on top, options wrap below
 function Block({ label, sub, children }: { label: string; sub?: string; children: React.ReactNode }) {
   return (
-    <div className="py-2.5 space-y-2">
-      <span className="text-sm font-medium text-stone-600">
-        {label}{sub && <span className="text-xs text-stone-300 font-normal ml-1">{sub}</span>}
+    <div className="py-3 space-y-2">
+      <span className="text-sm font-semibold text-stone-700">
+        {label}{sub && <span className="text-xs text-stone-400 font-normal ml-1.5">{sub}</span>}
       </span>
       <div className="flex flex-wrap gap-1.5">{children}</div>
     </div>
@@ -116,19 +116,19 @@ export default function Home() {
       <div className="w-full max-w-sm flex flex-col flex-1">
 
         {/* Header */}
-        <div className="text-center pt-8 pb-4 px-5">
-          <h1 className="text-3xl font-black text-stone-900 tracking-tight">Le Mot Juste</h1>
-          <p className="text-stone-400 text-xs mt-0.5">Charades en français</p>
+        <div className="text-center pt-10 pb-5 px-5">
+          <h1 className="text-4xl font-black text-stone-900 tracking-tighter">Le Mot Juste</h1>
+          <p className="text-stone-400 text-sm mt-1 font-medium">Charades en français</p>
         </div>
 
         {/* Tab switcher */}
-        <div className="px-5 mb-3">
-          <div className="flex bg-stone-100 rounded-xl p-1 gap-1">
+        <div className="px-5 mb-4">
+          <div className="flex bg-stone-100 rounded-2xl p-1 gap-1">
             <button
               type="button"
               onClick={() => { setTab('create'); setError('') }}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                tab === 'create' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                tab === 'create' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'
               }`}
             >
               Créer
@@ -136,8 +136,8 @@ export default function Home() {
             <button
               type="button"
               onClick={() => { setTab('join'); setError('') }}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                tab === 'join' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                tab === 'join' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'
               }`}
             >
               Rejoindre
@@ -145,12 +145,12 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-5 space-y-2.5 pb-28">
+        {/* Scrollable content — pb-6 is enough, button lives outside this div */}
+        <div className="flex-1 overflow-y-auto px-5 space-y-2.5 pb-6">
 
           {/* Name */}
           <div className="bg-white rounded-2xl px-4 py-3 border border-amber-100 shadow-sm">
-            <label className="block text-xs font-semibold text-stone-400 uppercase tracking-widest mb-1">
+            <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">
               Ton prénom
             </label>
             <input
@@ -165,7 +165,7 @@ export default function Home() {
 
           {tab === 'join' && (
             <div className="bg-white rounded-2xl px-4 py-3 border border-amber-100 shadow-sm">
-              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-widest mb-1">
+              <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">
                 Code de la partie
               </label>
               <input
@@ -232,8 +232,8 @@ export default function Home() {
               {/* Taboo toggle */}
               <div className="flex items-center justify-between py-2.5">
                 <div>
-                  <p className="text-sm font-medium text-stone-600">Mode Tabou</p>
-                  <p className="text-xs text-stone-400">Mots interdits visibles</p>
+                  <p className="text-sm font-semibold text-stone-700">Mode Tabou</p>
+                  <p className="text-xs text-stone-400 mt-0.5">Mots interdits visibles</p>
                 </div>
                 <button
                   type="button"
