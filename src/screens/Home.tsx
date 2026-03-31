@@ -3,6 +3,17 @@ import { useNavigate } from 'react-router-dom'
 import { createSession } from '../lib/sessions'
 import { useSessionStore } from '../stores/sessionStore'
 import { CATEGORIES } from '../lib/words'
+
+const CATEGORY_FR: Record<string, string> = {
+  'Food & places': 'Nourriture & lieux',
+  'Animals':       'Animaux',
+  'Objects':       'Objets',
+  'Travel':        'Voyage',
+  'Emotions':      'Émotions',
+  'Verbs':         'Verbes',
+  'Nature':        'Nature',
+  'Clothing':      'Vêtements',
+}
 import type { GameSettings } from '../types'
 
 const DEFAULT_SETTINGS: GameSettings = {
@@ -206,7 +217,7 @@ export default function Home() {
                 <div className="flex flex-wrap gap-1.5">
                   {CATEGORIES.map(cat => (
                     <Pill key={cat} active={settings.categories.includes(cat)} onClick={() => toggleCategory(cat)}>
-                      {cat}
+                      {CATEGORY_FR[cat] ?? cat}
                     </Pill>
                   ))}
                 </div>
