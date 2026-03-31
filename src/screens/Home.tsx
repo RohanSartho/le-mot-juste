@@ -195,6 +195,7 @@ export default function Home() {
                   onChange={e => set('max_players', Number(e.target.value))}
                   className="bg-stone-100 rounded-lg px-2 py-1 text-xs font-semibold text-stone-700 focus:outline-none"
                 >
+                  <option value={1}>Solo</option>
                   {[2, 3, 4, 5, 6, 7, 8].map(n => (
                     <option key={n} value={n}>{n} joueurs</option>
                   ))}

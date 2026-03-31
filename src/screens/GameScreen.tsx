@@ -63,8 +63,13 @@ export default function GameScreen({ code }: Props) {
       // Score
       let newScores = { ...session.scores }
       if (correct) {
-        const guesserName = players[(dIdx + 1) % players.length]
-        newScores = awardPoints(newScores, session.current_describer!, guesserName, hintUsed)
+        if (players.length === 1) {
+          // Solo mode — only the describer scores, flat +1
+          newScores[session.current_describer!] = (newScores[session.current_describer!] ?? 0) + 1
+        } else {
+          const guesserName = players[(dIdx + 1) % players.length]
+          newScores = awardPoints(newScores, session.current_describer!, guesserName, hintUsed)
+        }
       }
 
       // words_this_turn: did this describer finish their allotted words?

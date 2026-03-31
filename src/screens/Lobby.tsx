@@ -254,10 +254,10 @@ export default function Lobby() {
           <button
             type="button"
             onClick={handleStart}
-            disabled={starting || players.length < 2}
+            disabled={starting || players.length < (session?.settings.max_players === 1 ? 1 : 2)}
             className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform disabled:opacity-50"
           >
-            {starting ? 'Démarrage...' : players.length < 2 ? 'En attente de joueurs…' : 'Démarrer la partie →'}
+            {starting ? 'Démarrage...' : (players.length < 2 && session?.settings.max_players !== 1) ? 'En attente de joueurs…' : 'Démarrer la partie →'}
           </button>
         ) : (
           <div className="h-14 flex items-center justify-center">
