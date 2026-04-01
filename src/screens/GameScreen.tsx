@@ -24,6 +24,7 @@ export default function GameScreen({ code }: Props) {
   const [timeLeft, setTimeLeft] = useState<number>(session?.settings.timer_seconds ?? 60)
   const [hintUsed, setHintUsed] = useState(false)
   const [hintRevealed, setHintRevealed] = useState(false)
+  const [hint2Revealed, setHint2Revealed] = useState(false)
   const advancing = useRef(false)
   const [isAdvancing, setIsAdvancing] = useState(false)
 
@@ -38,6 +39,7 @@ export default function GameScreen({ code }: Props) {
     setTimeLeft(session.settings.timer_seconds)
     setHintUsed(false)
     setHintRevealed(false)
+    setHint2Revealed(false)
     fetchWordById(session.current_word_id).then(setCurrentWord)
   }, [session?.current_word_id])
 
@@ -180,19 +182,36 @@ export default function GameScreen({ code }: Props) {
                 {currentWord.word}
               </p>
 
-              {/* Interdit */}
-              {session.settings.taboo_enabled && currentWord.forbidden_words.length > 0 && (
+              {/* Interdit — shown as forbidden when taboo on, as clue words when taboo off */}
+              {currentWord.forbidden_words.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-rose-400 uppercase tracking-widest mb-2">
-                    🚫 Interdit
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {currentWord.forbidden_words.map(w => (
-                      <span key={w} className="text-sm bg-rose-50 text-rose-700 border border-rose-200 rounded-full px-3 py-1 font-medium">
-                        {w}
-                      </span>
-                    ))}
-                  </div>
+                  {session.settings.taboo_enabled ? (
+                    <>
+                      <p className="text-xs font-semibold text-rose-400 uppercase tracking-widest mb-2">
+                        🚫 Interdit
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {currentWord.forbidden_words.map(w => (
+                          <span key={w} className="text-sm bg-rose-50 text-rose-700 border border-rose-200 rounded-full px-3 py-1 font-medium">
+                            {w}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xs font-semibold text-teal-500 uppercase tracking-widest mb-2">
+                        🔑 Mots associés
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {currentWord.forbidden_words.map(w => (
+                          <span key={w} className="text-sm bg-teal-50 text-teal-700 border border-teal-200 rounded-full px-3 py-1 font-medium">
+                            {w}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -212,30 +231,39 @@ export default function GameScreen({ code }: Props) {
                 </div>
               )}
 
-              {/* Hint question — revealed on demand, costs -1 pt each */}
-              {currentWord.hint_question && (
-                <div className="border-t border-stone-100 pt-4">
-                  {hintRevealed ? (
-                    <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4">
-                      <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-1.5">
-                        🪄 Question guide
-                      </p>
-                      <p className="text-sm text-violet-800 font-medium leading-snug">
-                        {currentWord.hint_question}
-                      </p>
-                      <p className="text-xs text-violet-400 mt-2">−1 pt appliqué</p>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => { setHintRevealed(true); setHintUsed(true) }}
-                      className="w-full py-3 rounded-2xl border-2 border-dashed border-violet-300 text-violet-500 text-sm font-semibold active:scale-95 [touch-action:manipulation]"
-                    >
-                      🪄 Révéler la question guide (−1 pt)
-                    </button>
-                  )}
-                </div>
-              )}
+              {/* Primary hint — definition (hint2) preferred, falls back to hint_question */}
+              {(currentWord.hint2 || currentWord.hint_question) && (() => {
+                const useDefinition = !!currentWord.hint2
+                const hintText      = currentWord.hint2 ?? currentWord.hint_question
+                const isRevealed    = useDefinition ? hint2Revealed : hintRevealed
+                const onReveal      = useDefinition
+                  ? () => { setHint2Revealed(true); setHintUsed(true) }
+                  : () => { setHintRevealed(true);  setHintUsed(true) }
+
+                return (
+                  <div className="border-t border-stone-100 pt-4">
+                    {isRevealed ? (
+                      <div className="bg-sky-50 border border-sky-200 rounded-2xl p-4">
+                        <p className="text-xs font-semibold text-sky-400 uppercase tracking-widest mb-1.5">
+                          📖 Définition
+                        </p>
+                        <p className="text-sm text-sky-800 font-medium leading-snug">
+                          {hintText}
+                        </p>
+                        <p className="text-xs text-sky-400 mt-2">−1 pt appliqué</p>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={onReveal}
+                        className="w-full py-3 rounded-2xl border-2 border-dashed border-sky-300 text-sky-500 text-sm font-semibold active:scale-95 [touch-action:manipulation]"
+                      >
+                        📖 Révéler la définition (−1 pt)
+                      </button>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
           ) : (
             <div className="bg-white rounded-3xl p-10 shadow-md border border-amber-100 text-center">

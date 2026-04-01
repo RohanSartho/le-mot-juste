@@ -9,6 +9,7 @@ export interface Word {
   forbidden_words: string[]
   hints: string[]
   hint_question: string   // open-ended coaching prompt — revealed on demand, costs points
+  hint2?: string          // dictionary definition — revealed on demand, costs points
   language: string
   frequency_rank: number | null
   created_at: string
