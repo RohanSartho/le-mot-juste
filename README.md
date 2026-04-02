@@ -1,96 +1,91 @@
-# 🇫🇷 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Flag_of_Quebec.svg/40px-Flag_of_Quebec.svg.png" height="20" alt="Quebec flag" style="vertical-align:middle"/> Le Mot Juste — *"The Right Word"*
+# Le Mot Juste
 
-A real-time multiplayer French vocabulary game built around charades. One player describes a French word using only French sentences — no gestures, no translations — while everyone else shouts their guess. First to get it right wins the round.
+A real-time multiplayer French vocabulary game — like Taboo/Charades, built for language learners.
 
-Built for French learners and Francophiles — whether you're learning Parisian French 🇫🇷 or Québécois <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Flag_of_Quebec.svg/40px-Flag_of_Quebec.svg.png" height="14" alt="Quebec" style="vertical-align:middle"/>.
-
-**Live:** [le-mot-juste.vercel.app](https://le-mot-juste.vercel.app)
+**Live:** https://le-mot-juste.vercel.app
 
 ---
 
-## How to Play
+## How it works
 
-1. Create a game and share the code (e.g. `CHAT-4821`) or the URL with friends
-2. Everyone joins by entering their name — no account needed
-3. The describer sees a word and must explain it in French
-4. Forbidden words are shown — you can't use them in your description
-5. Hit **Correct** when someone guesses it, or **Passer** to skip
-6. Roles rotate after each turn. Most points after all rounds wins.
-
-**Solo mode** is also supported — practice your own vocabulary with just one player.
+1. Host creates a room → gets a short code (e.g. `CHAT-4821`) and a shareable URL
+2. Players join on their own devices (or pass the phone) — no account needed, just a name
+3. Each round: the **describer** sees a French word and describes it in French (no forbidden words allowed in Taboo mode)
+4. Other players shout their guesses out loud
+5. Describer taps **Correct** or **Skip** — role rotates after each player's turn
+6. End screen shows scores and medals — play again or start a new game
 
 ---
 
-## Word Database
+## Modes
 
-- **5,000 words** stored in Firebase Firestore, sourced and filtered from [Lexique 4](http://www.lexique.org/) — an open-source French lexical database
-- Words are tagged with:
-  - **Category** — one of 8 themes: Food & Places, Animals, Objects, Travel, Emotions, Verbs, Nature, Clothing
-  - **Difficulty** — derived from word frequency rank in Lexique 4:
-    - `easy` — frequency ≥ 50 per million words
-    - `medium` — frequency ≥ 5 per million
-    - `hard` — frequency < 5 per million
+| Mode | Taboo | Clue chips shown |
+|---|---|---|
+| **Beginner** (default) | Off | 🔑 Mots associés — synonyms + related words shown as helpers |
+| **Challenge** | On | 🚫 Interdit — those same words are forbidden to say |
 
----
-
-## Forbidden Words
-
-Each word has up to 3 **forbidden words** — related terms the describer cannot say. These are generated at seed time by sampling other words from the same category in the Firestore collection, picking semantically close neighbours. Forbidden words make descriptions harder and more creative.
-
-Example — *romantisme*: forbidden words might be `amour`, `sentiment`, `poème`
+Toggle in the lobby settings before starting.
 
 ---
 
-## Hint Phrases
+## Features
 
-Each word has an optional **hint question** — a coaching prompt the describer can reveal mid-turn at a cost of −1 point. These are generated from 10 template pools (one per category × part of speech), each with 7 prompt variants, randomly assigned per word during seeding.
-
-Example templates:
-- *"Quel sentiment évoque ce mot ?"* (Emotions)
-- *"Dans quel lieu trouve-t-on cela ?"* (Food & Places)
-- *"Est-ce un objet qu'on utilise à la maison ?"* (Objects)
-
----
-
-## Scoring
-
-| Situation | Points |
-|---|---|
-| Word guessed correctly | +2 to describer |
-| Word guessed with hint revealed | +1 to describer |
-| Passed or timed out | 0 |
-
-Guesser point tracking is planned for a future version.
+- 5,000 French words (sourced from Lexique4, enriched with Wiktionary)
+- Word categories: Animaux, Lieux & Nourriture, Nature, Émotions, Voyage, Objets, Vêtements, Verbes, Adjectifs, Divers
+- Difficulty filter: Easy / Medium / Hard / All
+- Configurable timer: 10s / 20s / 40s / 60s
+- Configurable rounds and words per turn
+- 📖 Reveal definition button — shows Wiktionary definition on demand (costs −1 pt)
+- Real-time sync via Firestore — all devices stay in sync automatically
+- Sessions auto-expire 2 hours after creation
 
 ---
 
 ## Stack
 
-| Layer | Tech |
-|---|---|
-| Frontend | Vite + React + TypeScript |
-| Styling | Tailwind CSS v4 |
-| State | Zustand |
-| Database | Firebase Firestore |
-| Auth | None — name only, stored in localStorage |
-| Hosting | Vercel |
+- **Frontend:** Vite + React + TypeScript + Tailwind CSS v4
+- **Backend:** Firebase Firestore
+- **State:** Zustand
+- **Hosting:** Vercel
+- **Auth:** None — player = name in localStorage
 
 ---
 
-## Local Development
+## Local dev
 
 ```bash
+cd app
 npm install
-npm run dev        # starts on localhost:3000, exposed on local network for phone testing
+npm run dev
+# → http://localhost:3000 (also accessible on local network for phone testing)
 ```
 
-Requires a `.env.local` with Firebase config:
+Requires a `.env.local` with Firebase credentials (not committed):
 
 ```
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
 ```
+
+---
+
+## Word data
+
+Words live in Firestore (`words` collection). Seed scripts are in `app/seed/`:
+
+| Script | Purpose |
+|---|---|
+| `seed_lexique.cjs` | Initial 5k-word import from Lexique4 TSV |
+| `update_words.cjs` | Batch update operations — forbidden words, Wiktionary definitions, synonyms |
+
+Run with `--limit N` to stay within the Firestore free tier (20k writes/day).
+
+---
+
+## Repo
+
+https://github.com/RohanSartho/le-mot-juste

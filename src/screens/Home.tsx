@@ -22,7 +22,7 @@ const DEFAULT_SETTINGS: GameSettings = {
   rounds: 1,
   words_per_round: 5,
   timer_seconds: 60,
-  taboo_enabled: true,
+  taboo_enabled: false,
   max_players: 2,
 }
 
