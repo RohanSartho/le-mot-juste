@@ -10,6 +10,7 @@ export interface Word {
   hints: string[]
   hint_question: string   // open-ended coaching prompt — revealed on demand, costs points
   hint2?: string          // dictionary definition — revealed on demand, costs points
+  synonyms?: string[]     // Wiktionary synonyms — shown as clues in beginner mode (taboo off)
   language: string
   frequency_rank: number | null
   created_at: string

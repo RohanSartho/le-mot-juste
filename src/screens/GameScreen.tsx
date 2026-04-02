@@ -204,7 +204,11 @@ export default function GameScreen({ code }: Props) {
                         🔑 Mots associés
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        {currentWord.forbidden_words.map(w => (
+                        {/* synonyms first (more direct), then forbidden_words — deduplicated */}
+                        {[...new Set([
+                          ...(currentWord.synonyms ?? []),
+                          ...currentWord.forbidden_words,
+                        ])].map(w => (
                           <span key={w} className="text-sm bg-teal-50 text-teal-700 border border-teal-200 rounded-full px-3 py-1 font-medium">
                             {w}
                           </span>

@@ -234,6 +234,60 @@ async function fetchBatch(wordList) {
   })
 }
 
+// Variant of fetchBatch that returns raw wikitext keyed by word (for synonym parsing).
+// Same API call, different output — raw content instead of parsed definition.
+async function fetchBatchRaw(wordList) {
+  return new Promise((resolve) => {
+    const params = new URLSearchParams({
+      action:   'query',
+      titles:   wordList.join('|'),
+      prop:     'revisions',
+      rvprop:   'content',
+      rvslots:  'main',
+      redirects: '1',
+      format:   'json',
+    })
+    const options = {
+      hostname: 'fr.wiktionary.org',
+      path:     `/w/api.php?${params.toString()}`,
+      headers:  { 'User-Agent': 'le-mot-juste-seed/1.0 (vocab learning game)' },
+      timeout:  20000,
+    }
+    const req = https.get(options, (res) => {
+      let data = ''
+      res.on('data', c => data += c)
+      res.on('end', () => {
+        if (res.statusCode === 429 || data.includes('too many requests') || data.includes('making too many')) {
+          resolve({}); return
+        }
+        try {
+          const json     = JSON.parse(data)
+          const pages    = json.query?.pages ?? {}
+          const byTitle  = {}
+          for (const page of Object.values(pages)) {
+            if (page.missing !== undefined) continue
+            const rev     = page.revisions?.[0]
+            const content = rev?.slots?.main?.['*'] ?? rev?.['*'] ?? ''
+            byTitle[page.title.toLowerCase()] = content
+          }
+          const aliasMap = {}
+          for (const n of json.query?.normalized ?? []) aliasMap[n.from.toLowerCase()] = n.to.toLowerCase()
+          for (const r of json.query?.redirects  ?? []) aliasMap[r.from.toLowerCase()] = r.to.toLowerCase()
+          const results = {}
+          for (const word of wordList) {
+            const lower    = word.toLowerCase()
+            const resolved = aliasMap[lower] ?? lower
+            results[word]  = byTitle[resolved] ?? byTitle[lower] ?? ''
+          }
+          resolve(results)
+        } catch { resolve({}) }
+      })
+    })
+    req.on('error',   () => resolve({}))
+    req.on('timeout', () => { req.destroy(); resolve({}) })
+  })
+}
+
 // ── Load all words from Firestore ─────────────────────────────────────────
 async function loadAllWords() {
   console.log('📥  Loading words from Firestore…')
@@ -446,22 +500,187 @@ async function writeHint2(limit) {
   console.log(`✅  write_hint2 — ${written} written to Firestore, ${Math.max(0, remaining)} remaining for next run`)
 }
 
+const SYNONYMS_CACHE_PATH = path.join(__dirname, 'synonyms_cache.json')
+
+function loadSynonymsCache() {
+  if (!fs.existsSync(SYNONYMS_CACHE_PATH)) return {}
+  try { return JSON.parse(fs.readFileSync(SYNONYMS_CACHE_PATH, 'utf8')) } catch { return {} }
+}
+
+function saveSynonymsCache(cache) {
+  fs.writeFileSync(SYNONYMS_CACHE_PATH, JSON.stringify(cache, null, 2))
+}
+
+// Parse synonyms from raw Wiktionary wikitext.
+// Isolates the French section, finds all {{S|synonymes}} subsections,
+// extracts * [[word]] lines and strips markup.
+function parseSynonyms(wikitext, targetWord) {
+  if (!wikitext) return []
+
+  // Isolate French section — stop at next language section
+  const frMatch = wikitext.match(/==\s*\{\{langue\|fr\}\}\s*==([\s\S]*?)(?:\n==\s*\{\{langue\|(?!fr)[^}]+\}\}|$)/)
+  const section = frMatch ? frMatch[1] : wikitext
+
+  const synonyms = new Set()
+  const lower    = targetWord.toLowerCase()
+
+  // Match every {{S|synonymes}} subsection, stop at the next ====+ heading
+  const SYN_RE = /\{\{S\|synonymes[^}]*\}\}[^\n]*\n([\s\S]*?)(?:(?:={3,})|$)/g
+  let m
+  while ((m = SYN_RE.exec(section)) !== null) {
+    for (const line of m[1].split('\n')) {
+      if (!line.startsWith('*')) continue
+      // Extract [[word]] or [[word|display]] — take the display label if present
+      const linkMatch = line.match(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/)
+      if (!linkMatch) continue
+      const word = (linkMatch[2] || linkMatch[1]).trim().toLowerCase()
+      // Skip the target word itself, empty strings, multi-word phrases (spaces = too vague)
+      if (!word || word === lower || word.includes(' ') || word.length < 2) continue
+      synonyms.add(word)
+    }
+  }
+
+  return [...synonyms].slice(0, 5)   // cap at 5 synonyms per word
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// OPERATION 4: fetch_synonyms
+// Fetches Wiktionary wikitext in batches of 50, parses {{S|synonymes}} sections,
+// saves to synonyms_cache.json. No Firestore writes. Resumable.
+// ─────────────────────────────────────────────────────────────────────────
+async function fetchSynonyms() {
+  const words = await loadAllWords()
+  const cache = loadSynonymsCache()
+
+  const toFetch      = words.filter(w => !(w.word in cache))
+  const BATCH        = 50
+  const totalBatches = Math.ceil(toFetch.length / BATCH)
+
+  console.log(`\n🔗  fetch_synonyms`)
+  console.log(`   ${words.length} total words  |  ${toFetch.length} to fetch  |  ${Object.keys(cache).length} already cached`)
+  console.log(`   Batching 50 words/request → ${totalBatches} requests  |  ~${Math.ceil(totalBatches / 6)} min`)
+  console.log(`   Output: ${SYNONYMS_CACHE_PATH}`)
+
+  if (toFetch.length === 0) { console.log('   Nothing to do — cache is complete.'); return }
+
+  console.log('   Proceeding in 3 seconds… Ctrl-C to abort safely (progress is saved).')
+  await sleep(3000)
+
+  const RATE_MS  = 2000
+  const MAX_BACK = 300000
+  let withSynonyms = 0
+  let noSynonyms   = 0
+
+  for (let i = 0; i < toFetch.length; i += BATCH) {
+    const chunk   = toFetch.slice(i, i + BATCH).map(w => w.word)
+    let   backoff = 60000
+    let   result
+
+    // fetchBatchRaw returns raw wikitext keyed by word — needed for synonym parsing
+    let rawResult = {}
+    while (true) {
+      rawResult = await fetchBatchRaw(chunk)
+      // fetchBatchRaw returns {} on rate limit — detect by checking if all entries are empty
+      const allEmpty = chunk.every(w => !rawResult[w])
+      if (!allEmpty) break
+      console.log(`   ⏳ Rate limited — waiting ${backoff / 1000}s…`)
+      await sleep(backoff)
+      backoff = Math.min(backoff * 2, MAX_BACK)
+    }
+
+    for (const word of chunk) {
+      const syns      = parseSynonyms(rawResult[word] ?? '', word)
+      cache[word]     = syns   // empty array = checked, no synonyms found
+      if (syns.length > 0) withSynonyms++ ; else noSynonyms++
+    }
+
+    saveSynonymsCache(cache)
+    const batchNum = Math.floor(i / BATCH) + 1
+    console.log(`   batch ${batchNum}/${totalBatches}  |  ${withSynonyms} with synonyms  |  ${noSynonyms} none found`)
+
+    if (i + BATCH < toFetch.length) await sleep(RATE_MS)
+  }
+
+  console.log(`\n✅  fetch_synonyms done — ${withSynonyms} words have synonyms`)
+  console.log(`   Review ${SYNONYMS_CACHE_PATH} then run: node seed/update_words.cjs write_synonyms`)
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// OPERATION 5: write_synonyms
+// Reads synonyms_cache.json and writes to Firestore. Respects --limit.
+// Skips words that already have synonyms set. Resumable.
+// ─────────────────────────────────────────────────────────────────────────
+async function writeSynonyms(limit) {
+  const cache = loadSynonymsCache()
+  if (Object.keys(cache).length === 0) {
+    console.log('❌  synonyms_cache.json is empty or missing. Run fetch_synonyms first.')
+    process.exit(1)
+  }
+
+  const words   = await loadAllWords()
+  // Only write words that: have cached synonyms (non-empty array) AND don't already have synonyms in Firestore
+  const toWrite = words.filter(w => cache[w.word]?.length > 0 && !w.synonyms?.length)
+  const willWrite = Math.min(toWrite.length, limit)
+
+  console.log(`\n✍️   write_synonyms`)
+  console.log(`   ${Object.keys(cache).length} words in cache  |  ${toWrite.length} have synonyms to write  |  ${words.length - toWrite.length} already done or no synonyms`)
+  console.log(`   This run: up to ${willWrite} writes  (--limit ${limit})`)
+  if (toWrite.length > willWrite) {
+    console.log(`   ${Math.ceil((toWrite.length - willWrite) / limit)} more run(s) needed tomorrow`)
+  }
+
+  if (toWrite.length === 0) { console.log('   Nothing to do.'); return }
+
+  console.log('   Proceeding in 3 seconds… Ctrl-C to abort.')
+  await sleep(3000)
+
+  const BATCH_SIZE = 400
+  let written = 0
+  let pending = []
+
+  for (const w of toWrite) {
+    if (written + pending.length >= limit) {
+      console.log(`   ⏸  Write limit (${limit}) reached — re-run tomorrow to continue.`)
+      break
+    }
+    pending.push({ ref: w.ref, fields: { synonyms: cache[w.word] } })
+
+    if (pending.length >= BATCH_SIZE) {
+      await flushBatch(pending)
+      written += pending.length
+      pending = []
+      console.log(`   ${written} written so far`)
+    }
+  }
+
+  if (pending.length > 0) {
+    await flushBatch(pending)
+    written += pending.length
+  }
+
+  console.log(`✅  write_synonyms — ${written} written to Firestore, ${Math.max(0, toWrite.length - written)} remaining for next run`)
+}
+
 // ── Entry point ───────────────────────────────────────────────────────────
 const { op, limit } = parseArgs()
 
-if (!op || !['fix_forbidden', 'fetch_hint2', 'write_hint2'].includes(op)) {
+if (!op || !['fix_forbidden', 'fetch_hint2', 'write_hint2', 'fetch_synonyms', 'write_synonyms'].includes(op)) {
   console.log('Usage:')
-  console.log('  node seed/update_words.cjs fix_forbidden          — fill empty forbidden_words[]')
-  console.log('  node seed/update_words.cjs fetch_hint2            — fetch definitions from Wiktionary → hint2_cache.json')
-  console.log('  node seed/update_words.cjs write_hint2 [--limit N] — write cache to Firestore (default limit: 4000)')
+  console.log('  node seed/update_words.cjs fix_forbidden               — fill empty forbidden_words[]')
+  console.log('  node seed/update_words.cjs fetch_hint2                 — fetch definitions → hint2_cache.json')
+  console.log('  node seed/update_words.cjs write_hint2   [--limit N]   — write hint2 cache to Firestore')
+  console.log('  node seed/update_words.cjs fetch_synonyms              — fetch synonyms → synonyms_cache.json')
+  console.log('  node seed/update_words.cjs write_synonyms [--limit N]  — write synonyms cache to Firestore')
   console.log('')
-  console.log('  --limit N   max Firestore writes per run (write_hint2 only)')
+  console.log('  --limit N   max Firestore writes per run (default: 4000)')
   process.exit(0)
 }
 
 const ops = {
-  fix_forbidden: () => fixForbidden(limit),
-  fetch_hint2:   () => fetchHint2(),        // no limit — no Firestore writes
-  write_hint2:   () => writeHint2(limit),
+  fix_forbidden:   () => fixForbidden(limit),
+  fetch_hint2:     () => fetchHint2(),
+  write_hint2:     () => writeHint2(limit),
+  fetch_synonyms:  () => fetchSynonyms(),
+  write_synonyms:  () => writeSynonyms(limit),
 }
 ops[op]().catch(e => { console.error('❌', e); process.exit(1) }).then(() => process.exit(0))
