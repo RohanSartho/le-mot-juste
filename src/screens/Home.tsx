@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { createSession } from '../lib/sessions'
 import { useSessionStore } from '../stores/sessionStore'
 import { CATEGORIES } from '../lib/words'
+import HowToPlayModal from '../components/HowToPlayModal'
 import type { GameSettings } from '../types'
 
 const CATEGORY_FR: Record<string, string> = {
@@ -63,6 +64,7 @@ export default function Home() {
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showHowToPlay, setShowHowToPlay] = useState(false)
 
   function set<K extends keyof GameSettings>(key: K, value: GameSettings[K]) {
     setSettings(s => ({ ...s, [key]: value }))
@@ -102,10 +104,34 @@ export default function Home() {
 
   return (
     <div className="min-h-dvh bg-[#fdf7ef] flex flex-col items-center">
+      <style>{`
+        @keyframes radiate {
+          0% {
+            box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.4);
+          }
+          70% {
+            box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+          }
+        }
+        .animate-radiate {
+          animation: radiate 2s infinite;
+        }
+      `}</style>
       <div className="w-full max-w-sm flex flex-col flex-1">
 
         {/* Header */}
-        <div className="text-center pt-10 pb-5 px-5">
+        <div className="text-center pt-10 pb-5 px-5 relative">
+          <button
+            type="button"
+            onClick={() => setShowHowToPlay(true)}
+            className="absolute top-10 right-5 w-10 h-10 flex items-center justify-center text-xl rounded-full transition-colors active:scale-95 animate-pulse animate-radiate"
+            title="How to play"
+          >
+            ❓
+          </button>
           <h1 className="text-4xl font-black text-stone-900 tracking-tighter">🇫🇷 Le Mot Juste</h1>
           <p className="text-stone-400 text-sm mt-1 font-medium">Charades en français</p>
         </div>
@@ -290,6 +316,8 @@ export default function Home() {
         </div>
 
       </div>
+
+      <HowToPlayModal isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
     </div>
   )
 }
