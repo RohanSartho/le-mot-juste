@@ -71,7 +71,7 @@
 - [x] `rounds` renamed to "Nombre de manches" (1/2/3)
 - [x] `max_players` — dropdown 2–8, default 2, visual indicator in lobby (shows X / expected)
 - [x] `timer_seconds` — pill selector: 10s / 20s / 40s / 60s
-- [x] `taboo_enabled` toggle — when off, forbidden words hidden from describer card
+- [x] `taboo_enabled` toggle — when off, forbidden words shown as 🔑 Mots associés clues; **default: off (beginner-friendly)**
 - [x] Category multi-select chips (all 8 categories, labels in French)
 - [x] Settings order: words/turn → manches → players → timer → difficulty → categories → taboo
 - [x] **Bug fix**: all `<button>` elements have `type="button"` — taboo toggle + game controls no longer misfire
@@ -117,40 +117,53 @@
 
 ---
 
-## Phase 7: Bug Fixes + Solo Mode + Scoring Overhaul ✅ COMPLETE
+## Phase 8: Word Data Enrichment ✅ COMPLETE
 
-### Bugs fixed
-- [x] **404 on direct URL paste** — `vercel.json` SPA rewrite (`/(.*) → /index.html`)
-- [x] **React error #310** — hooks after early returns in Lobby; moved before conditionals
-- [x] **Button double-tap on mobile** — global `button { transition: none }` in `index.css`
-- [x] **Play again button stuck disabled** — `setStarting(false)` moved to `finally` block
-- [x] **Play again showed stuck lobby** — removed `initialised.current` guard from `onSnapshot`; state always derived from snapshot
+### 8A — forbidden_words populated
+- [x] `seed/update_words.cjs` created — batch update script (uses `update()` not `set()`, preserves all fields)
+- [x] Category pools added for Verbes, Adjectifs, Divers (were empty — caused 4796 skips)
+- [x] `fix_forbidden` op — fills empty `forbidden_words[]` for all 5k Lexique words
+- [x] 4000 written day 1, 796 remaining (run tomorrow)
+- [x] `--limit N` flag — caps Firestore writes per run (default 4000, leaves headroom for app)
 
-### Features
-- [x] **Solo mode** — "Solo" in player selector; lobby starts with 1 player; rotation stays on same player
-- [x] **Copy code button** — lobby, with "Copié ✓" state
-- [x] **Dynamic word font size** — scales by word length, `whitespace-nowrap`, never splits a word
-- [x] **README rewritten** — project overview, word DB, forbidden words, hints, scoring, stack
-- [x] **GitHub about** — description + live URL + 🇫🇷 ⚜️ flags
-- [x] **Landing page** — 🇫🇷 flag added before title
-- [x] **README Quebec flag** — actual Quebec flag image (Wikimedia SVG) embedded inline in heading
+### 8B — hint2 (Wiktionary definitions)
+- [x] `hint2?: string` added to `Word` type
+- [x] `fetch_hint2` op — fetches from French Wiktionary using `prop=revisions` (raw wikitext, true batch support)
+  - Batches 50 words/request → 100 requests total, ~3 min, no rate limiting
+  - Saves to `seed/hint2_cache.json` — resumable, survives crashes
+  - 4987 / 5000 definitions fetched (13 not on Wiktionary)
+- [x] `write_hint2` op — writes cache to Firestore, respects `--limit`
+  - 4000 written day 1, 987 remaining (run tomorrow)
+- [x] `hint2` is now the **default hint reveal** in GameScreen — replaces the generic `hint_question` template
+  - Falls back to `hint_question` for the 13 words without a Wiktionary definition
+  - UI consolidated from 2 reveal buttons → 1 (`📖 Révéler la définition`)
 
-### Scoring
-- [x] Describer-only scoring: +2 correct, +1 correct w/ hint, 0 pass
-- [x] Guesser tracking moved to post-v1 backlog
+### 8C — taboo words shown as clues
+- [x] When `taboo_enabled = false`: `forbidden_words` now shown as `🔑 Mots associés` (teal chips) instead of being hidden
+- [x] When `taboo_enabled = true`: shown as `🚫 Interdit` (rose chips) as before
 
 ---
 
-## ⚠️ Pending — Do Before Next Session
+## Phase 9: Infrastructure + Defaults ✅ COMPLETE
 
-### Firestore seed re-run required
-- [ ] Firestore daily write quota was exhausted on 2026-03-31
-- [ ] Quota resets at **midnight UTC = 8:00 PM EDT**
-- [ ] Steps:
-  1. Firebase console → Firestore → Rules → set `words` write to `if true`
-  2. `node seed/seed_lexique.cjs`
-  3. Restore `words` write rule to `if false`
-- [ ] This will populate `forbidden_words` for all 5k words (currently empty — taboo mode falls back to static 50 words)
+### 9A — Taboo default off
+- [x] `taboo_enabled` default changed to `false` in `Home.tsx` `DEFAULT_SETTINGS`
+- [x] New games now start in beginner mode — synonyms + related words shown as clues
+- [x] Host can still enable Taboo in lobby settings for challenge mode
+
+### 9B — Session purge cron
+- [x] `api/purge-sessions.ts` — Vercel serverless function, Firebase Admin SDK
+- [x] Queries `expires_at < (now - 22h)` — sessions created 24h+ ago
+- [x] Batch-deletes in chunks of 500 (Firestore limit)
+- [x] Auth: Vercel Cron header OR `Authorization: Bearer CRON_SECRET` for manual trigger
+- [x] `vercel.json` cron: `0 6 * * *` (06:00 UTC daily)
+- [x] `firebase-admin` + `@vercel/node` installed
+- [x] Routing fixed: switched to `routes` with `handle: filesystem` so `/api/*` isn't swallowed by SPA rewrite
+- [ ] **Requires setup**: add `FIREBASE_SERVICE_ACCOUNT` + `CRON_SECRET` to Vercel env vars
+- [ ] **Vercel Pro** required for auto-fire; manual curl trigger works on Hobby
+
+### 9C — README
+- [x] `README.md` written — game overview, modes table, features, stack, local dev, word data
 
 ---
 
@@ -158,12 +171,18 @@
 - [ ] `words_per_round` rotation: if host refreshes mid-game, `useGameStore` resets (acceptable v1)
 - [ ] No PWA / offline support
 - [ ] Game code collisions theoretically possible at scale
-- [ ] Firestore words have `forbidden_words: []` until seed re-run completes (see above)
+
+---
+
+### 8D — Synonyms in beginner mode ✅ COMPLETE
+- [x] `synonyms?: string[]` added to `Word` type
+- [x] `fetch_synonyms` op — batches 50 words/request, parses `{{S|synonymes}}` from Wiktionary wikitext → `synonyms_cache.json`
+- [x] `write_synonyms` op — 1683 words written to Firestore (3317 have no Wiktionary synonyms — accepted, still show forbidden_words as clues)
+- [x] GameScreen taboo-off: synonyms shown first, then forbidden_words, deduplicated into one `🔑 Mots associés` chip group
 
 ---
 
 ## Post-v1 Backlog (do not implement)
-- [ ] **Guesser point tracking** — Currently only the describer scores. To award guessers: either (a) add a real-time "who guessed?" tap UI that appears after each correct word, or (b) implement team-based scoring where the describing team shares points. Requires deciding whether guesses are tracked per-player or per-team. Blocked on real-time sync design.
 - [ ] Real-time guess sync via Firestore Realtime
 - [ ] Custom word packs
 - [ ] Persistent accounts + history
