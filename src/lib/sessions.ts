@@ -31,7 +31,7 @@ export async function createSession(
   }
 
   const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('Connexion lente — réessaie dans quelques secondes')), 8000)
+    setTimeout(() => reject(new Error('Connexion lente — réessaie dans quelques secondes')), 30000)
   )
   await Promise.race([setDoc(doc(db, 'game_sessions', id), session), timeout])
   return session
