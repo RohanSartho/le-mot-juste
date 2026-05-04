@@ -4,6 +4,7 @@ import { createSession } from '../lib/sessions'
 import { useSessionStore } from '../stores/sessionStore'
 import { CATEGORIES } from '../lib/words'
 import HowToPlayModal from '../components/HowToPlayModal'
+import { Subtitle } from '../components/Subtitle'
 import type { GameSettings } from '../types'
 
 const CATEGORY_FR: Record<string, string> = {
@@ -15,6 +16,24 @@ const CATEGORY_FR: Record<string, string> = {
   'Verbs':         'Verbes',
   'Nature':        'Nature',
   'Clothing':      'Vêtements',
+}
+
+const CATEGORY_EN: Record<string, string> = {
+  'Food & places': 'Food & places',
+  'Animals':       'Animals',
+  'Objects':       'Objects',
+  'Travel':        'Travel',
+  'Emotions':      'Emotions',
+  'Verbs':         'Verbs',
+  'Nature':        'Nature',
+  'Clothing':      'Clothing',
+}
+
+const DIFFICULTY_EN: Record<string, string> = {
+  'all': 'All',
+  'easy': 'Easy',
+  'medium': 'Medium',
+  'hard': 'Hard',
 }
 
 const DEFAULT_SETTINGS: GameSettings = {
@@ -44,10 +63,13 @@ function Pill({
 }
 
 // Inline row: label on left, controls on right
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, english, children }: { label: string; english?: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2 py-3">
-      <span className="text-sm font-semibold text-stone-700 shrink-0">{label}</span>
+      <div>
+        <span className="text-sm font-semibold text-stone-700 shrink-0 block">{label}</span>
+        {english && <span className="text-xs text-gray-400">{english}</span>}
+      </div>
       <div className="flex gap-1.5">{children}</div>
     </div>
   )
@@ -133,7 +155,7 @@ export default function Home() {
             ❓
           </button>
           <h1 className="text-4xl font-black text-stone-900 tracking-tighter">🇫🇷 Le Mot Juste</h1>
-          <p className="text-stone-400 text-sm mt-1 font-medium">Charades en français</p>
+          <Subtitle french="Charades en français" english="French charades game" />
         </div>
 
         {/* Tab switcher */}
@@ -142,20 +164,22 @@ export default function Home() {
             <button
               type="button"
               onClick={() => { setTab('create'); setError('') }}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              className={`flex-1 py-2.5 rounded-xl text-base font-bold transition-all ${
                 tab === 'create' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'
               }`}
             >
-              Créer
+              <div>Créer</div>
+              <div className="text-[11px] text-gray-400">Create</div>
             </button>
             <button
               type="button"
               onClick={() => { setTab('join'); setError('') }}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              className={`flex-1 py-2.5 rounded-xl text-base font-bold transition-all ${
                 tab === 'join' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'
               }`}
             >
-              Rejoindre
+              <div>Rejoindre</div>
+              <div className="text-[11px] text-gray-400">Join</div>
             </button>
           </div>
         </div>
@@ -165,9 +189,7 @@ export default function Home() {
 
           {/* Name */}
           <div className="bg-white rounded-2xl px-4 py-3 border border-amber-100 shadow-sm">
-            <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">
-              Ton prénom
-            </label>
+            <Subtitle french="Ton prénom" english="Your name" className="text-[11px] font-bold text-stone-400 uppercase tracking-widest mb-1.5 text-left" smaller />
             <input
               value={name}
               onChange={e => setName(e.target.value)}
@@ -180,9 +202,7 @@ export default function Home() {
 
           {tab === 'join' && (
             <div className="bg-white rounded-2xl px-4 py-3 border border-amber-100 shadow-sm">
-              <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">
-                Code de la partie
-              </label>
+              <Subtitle french="Code de la partie" english="Game code" className="text-[11px] font-bold text-stone-400 uppercase tracking-widest mb-1.5 text-left" smaller />
               <input
                 value={joinCode}
                 onChange={e => setJoinCode(e.target.value.toUpperCase())}
@@ -197,25 +217,25 @@ export default function Home() {
             <div className="bg-white rounded-2xl px-4 border border-amber-100 shadow-sm divide-y divide-stone-100">
 
               {/* Inline rows — label + pills fit on one line */}
-              <Row label="Mots / tour">
+              <Row label="Mots / tour" english="Words per round">
                 {[3, 5, 7].map(n => (
                   <Pill key={n} active={settings.words_per_round === n} onClick={() => set('words_per_round', n)}>{n}</Pill>
                 ))}
               </Row>
 
-              <Row label="Manches">
+              <Row label="Manches" english="Rounds">
                 {[1, 2, 3].map(n => (
                   <Pill key={n} active={settings.rounds === n} onClick={() => set('rounds', n)}>{n}</Pill>
                 ))}
               </Row>
 
-              <Row label="Timer">
+              <Row label="Timer" english="Timer (seconds)">
                 {([10, 20, 40, 60] as const).map(s => (
                   <Pill key={s} active={settings.timer_seconds === s} onClick={() => set('timer_seconds', s)}>{s}s</Pill>
                 ))}
               </Row>
 
-              <Row label="Joueurs">
+              <Row label="Joueurs" english="Players">
                 <select
                   value={settings.max_players}
                   onChange={e => set('max_players', Number(e.target.value))}
@@ -230,39 +250,54 @@ export default function Home() {
 
               {/* Difficulté — 4 equal columns */}
               <div className="py-3 space-y-2">
-                <span className="text-sm font-semibold text-stone-700">Difficulté</span>
+                <div>
+                  <span className="text-sm font-semibold text-stone-700 block">Difficulté</span>
+                  <span className="text-xs text-gray-400">Difficulty</span>
+                </div>
                 <div className="grid grid-cols-4 gap-1.5">
-                  {(['all', 'easy', 'medium', 'hard'] as const).map(d => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => set('difficulty', d)}
-                      className={`py-2 rounded-lg text-xs font-bold tracking-wide transition-all active:scale-95 text-center ${
-                        settings.difficulty === d ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'
-                      }`}
-                    >
-                      {d === 'all' ? 'Tous' : d === 'easy' ? 'Facile' : d === 'medium' ? 'Moyen' : 'Dur'}
-                    </button>
-                  ))}
+                  {(['all', 'easy', 'medium', 'hard'] as const).map(d => {
+                    const frenchName = d === 'all' ? 'Tous' : d === 'easy' ? 'Facile' : d === 'medium' ? 'Moyen' : 'Dur'
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => set('difficulty', d)}
+                        className={`py-2 rounded-lg text-xs font-bold tracking-wide transition-all active:scale-95 text-center flex flex-col items-center ${
+                          settings.difficulty === d ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'
+                        }`}
+                      >
+                        <div>{frenchName}</div>
+                        <div className={`text-[10px] ${settings.difficulty === d ? 'text-gray-300' : 'text-gray-400'}`}>
+                          {DIFFICULTY_EN[d]}
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
               {/* Catégories — 2 equal columns */}
               <div className="py-3 space-y-2">
-                <span className="text-sm font-semibold text-stone-700">
-                  Catégories <span className="text-xs text-stone-400 font-normal ml-1.5">(toutes si vide)</span>
-                </span>
+                <div>
+                  <span className="text-sm font-semibold text-stone-700 block">
+                    Catégories <span className="text-xs text-stone-400 font-normal ml-1.5">(toutes si vide)</span>
+                  </span>
+                  <span className="text-xs text-gray-400">Categories (all if empty)</span>
+                </div>
                 <div className="grid grid-cols-2 gap-1.5">
                   {CATEGORIES.map(cat => (
                     <button
                       key={cat}
                       type="button"
                       onClick={() => toggleCategory(cat)}
-                      className={`py-2 rounded-lg text-xs font-bold tracking-wide transition-all active:scale-95 text-center ${
+                      className={`py-2 rounded-lg text-xs font-bold tracking-wide transition-all active:scale-95 text-center flex flex-col items-center ${
                         settings.categories.includes(cat) ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'
                       }`}
                     >
-                      {CATEGORY_FR[cat] ?? cat}
+                      <div>{CATEGORY_FR[cat] ?? cat}</div>
+                      <div className={`text-[10px] ${settings.categories.includes(cat) ? 'text-gray-300' : 'text-gray-400'}`}>
+                        {CATEGORY_EN[cat] ?? cat}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -271,8 +306,14 @@ export default function Home() {
               {/* Taboo toggle */}
               <div className="flex items-center justify-between py-2.5">
                 <div>
-                  <p className="text-sm font-semibold text-stone-700">Mode Tabou</p>
-                  <p className="text-xs text-stone-400 mt-0.5">Mots interdits visibles</p>
+                  <div>
+                    <p className="text-sm font-semibold text-stone-700 block">Mode Tabou</p>
+                    <p className="text-xs text-gray-400">Taboo Mode</p>
+                  </div>
+                  <div className="mt-1">
+                    <p className="text-xs text-stone-400 block">Mots interdits visibles</p>
+                    <p className="text-[10px] text-gray-400">Show forbidden words</p>
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -300,17 +341,23 @@ export default function Home() {
               type="button"
               onClick={handleCreate}
               disabled={loading}
-              className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform disabled:opacity-50"
+              className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform disabled:opacity-50 flex items-center justify-center"
             >
-              {loading ? 'Création...' : 'Créer la partie →'}
+              <div>
+                <div>{loading ? 'Création...' : 'Créer la partie →'}</div>
+                {!loading && <div className="text-xs text-gray-400">Create game</div>}
+              </div>
             </button>
           ) : (
             <button
               type="button"
               onClick={handleJoin}
-              className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform"
+              className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform flex items-center justify-center"
             >
-              Rejoindre →
+              <div>
+                <div>Rejoindre →</div>
+                <div className="text-xs text-gray-400">Join game</div>
+              </div>
             </button>
           )}
         </div>

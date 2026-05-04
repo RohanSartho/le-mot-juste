@@ -5,6 +5,7 @@ import { db } from '../lib/firebase'
 import { joinSession, startGame } from '../lib/sessions'
 import { fetchWordPool, pickNextWordId } from '../lib/words'
 import { useSessionStore } from '../stores/sessionStore'
+import { Subtitle } from '../components/Subtitle'
 import type { GameSession } from '../types'
 import GameScreen from './GameScreen'
 import EndGameScreen from './EndGameScreen'
@@ -125,7 +126,8 @@ export default function Lobby() {
             onClick={() => navigate('/')}
             className="text-stone-400 text-sm underline"
           >
-            ← Retour
+            <div>← Retour</div>
+            <div className="text-xs text-gray-400">Back</div>
           </button>
         </div>
       </Shell>
@@ -137,7 +139,7 @@ export default function Lobby() {
       <Shell>
         <div className="flex-1 flex flex-col justify-center px-5 gap-5">
           <div className="text-center">
-            <p className="text-stone-400 text-xs uppercase tracking-widest mb-1">Rejoindre la partie</p>
+            <Subtitle french="Rejoindre la partie" english="Join game" className="text-stone-400 text-xs uppercase tracking-widest mb-1" smaller />
             <h2 className="text-4xl font-black font-mono tracking-widest text-stone-900">{code}</h2>
             {session && (
               <p className="text-stone-400 text-sm mt-1">Organisée par {session.host_name}</p>
@@ -145,9 +147,7 @@ export default function Lobby() {
           </div>
 
           <div className="bg-white rounded-2xl px-4 py-3 border border-amber-100 shadow-sm">
-            <label className="block text-xs font-semibold text-stone-400 uppercase tracking-widest mb-1.5">
-              Ton prénom
-            </label>
+            <Subtitle french="Ton prénom" english="Your name" className="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-1.5 text-left" smaller />
             <input
               value={nameInput}
               onChange={e => setNameInput(e.target.value)}
@@ -166,9 +166,12 @@ export default function Lobby() {
             type="button"
             onClick={handleJoin}
             disabled={joining}
-            className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform disabled:opacity-50"
+            className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform disabled:opacity-50 flex items-center justify-center"
           >
-            {joining ? 'Connexion...' : 'Rejoindre →'}
+            <div>
+              <div>{joining ? 'Connexion...' : 'Rejoindre →'}</div>
+              {!joining && <div className="text-xs text-gray-400">Join game</div>}
+            </div>
           </button>
         </div>
       </Shell>
@@ -185,15 +188,16 @@ export default function Lobby() {
 
         {/* Game code */}
         <div className="text-center space-y-1">
-          <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">Code de la partie</p>
+          <Subtitle french="Code de la partie" english="Game code" className="text-xs font-semibold text-stone-400 uppercase tracking-widest" smaller />
           <div className="flex items-center justify-center gap-2">
             <h2 className="text-5xl font-black font-mono tracking-widest text-stone-900">{code}</h2>
             <button
               type="button"
               onClick={handleCopy}
-              className="mt-1 h-9 px-3 rounded-xl bg-stone-100 text-stone-500 text-xs font-bold transition-colors active:scale-95 hover:bg-stone-200"
+              className="mt-1 h-9 px-3 rounded-xl bg-stone-100 text-stone-500 text-xs font-bold transition-colors active:scale-95 hover:bg-stone-200 flex flex-col items-center justify-center"
             >
-              {copied ? 'Copié ✓' : 'Copier'}
+              <div>{copied ? 'Copié ✓' : 'Copier'}</div>
+              <div className="text-xs text-gray-400">{copied ? 'Copied' : 'Copy'}</div>
             </button>
           </div>
           <p className="text-stone-400 text-sm">Partage ce code à tes amis</p>
@@ -202,7 +206,7 @@ export default function Lobby() {
         {/* Players list */}
         <div className="bg-white rounded-2xl p-5 border border-amber-100 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">Joueurs</p>
+            <Subtitle french="Joueurs" english="Players" className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest" smaller />
             <span className="text-xs font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-full">
               {players.length} / {expectedCount}
             </span>
@@ -225,20 +229,30 @@ export default function Lobby() {
         {/* Settings summary */}
         {session && (
           <div className="bg-white rounded-2xl p-5 border border-amber-100 shadow-sm">
-            <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-3">Paramètres</p>
-            <div className="grid grid-cols-2 gap-y-2 text-sm">
-              <span className="text-stone-400">Mots / tour</span>
-              <span className="font-semibold text-stone-700">{session.settings.words_per_round}</span>
-              <span className="text-stone-400">Manches</span>
-              <span className="font-semibold text-stone-700">{session.settings.rounds}</span>
-              <span className="text-stone-400">Timer</span>
-              <span className="font-semibold text-stone-700">{session.settings.timer_seconds}s</span>
-              <span className="text-stone-400">Difficulté</span>
-              <span className="font-semibold text-stone-700">
-                {session.settings.difficulty === 'all' ? 'Tous niveaux' : session.settings.difficulty}
-              </span>
-              <span className="text-stone-400">Tabou</span>
-              <span className="font-semibold text-stone-700">{session.settings.taboo_enabled ? 'Activé' : 'Désactivé'}</span>
+            <Subtitle french="Paramètres" english="Settings" className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest mb-3" smaller />
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <div><div className="text-stone-400">Mots / tour</div><div className="text-xs text-gray-400">Words per round</div></div>
+                <span className="font-semibold text-stone-700">{session.settings.words_per_round}</span>
+              </div>
+              <div className="flex justify-between">
+                <div><div className="text-stone-400">Manches</div><div className="text-xs text-gray-400">Rounds</div></div>
+                <span className="font-semibold text-stone-700">{session.settings.rounds}</span>
+              </div>
+              <div className="flex justify-between">
+                <div><div className="text-stone-400">Timer</div><div className="text-xs text-gray-400">Timer (seconds)</div></div>
+                <span className="font-semibold text-stone-700">{session.settings.timer_seconds}s</span>
+              </div>
+              <div className="flex justify-between">
+                <div><div className="text-stone-400">Difficulté</div><div className="text-xs text-gray-400">Difficulty</div></div>
+                <span className="font-semibold text-stone-700">
+                  {session.settings.difficulty === 'all' ? 'Tous niveaux' : session.settings.difficulty}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <div><div className="text-stone-400">Tabou</div><div className="text-xs text-gray-400">Taboo</div></div>
+                <span className="font-semibold text-stone-700">{session.settings.taboo_enabled ? 'Activé' : 'Désactivé'}</span>
+              </div>
             </div>
           </div>
         )}
@@ -252,9 +266,12 @@ export default function Lobby() {
             type="button"
             onClick={handleStart}
             disabled={starting || players.length < (session?.settings.max_players === 1 ? 1 : 2)}
-            className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform disabled:opacity-50"
+            className="w-full h-14 bg-stone-900 text-white rounded-2xl text-base font-bold active:scale-[0.98] transition-transform disabled:opacity-50 flex items-center justify-center"
           >
-            {starting ? 'Démarrage...' : (players.length < 2 && session?.settings.max_players !== 1) ? 'En attente de joueurs…' : 'Démarrer la partie →'}
+            <div className="text-center">
+              <div>{starting ? 'Démarrage...' : (players.length < 2 && session?.settings.max_players !== 1) ? 'En attente de joueurs…' : 'Démarrer la partie →'}</div>
+              {!starting && players.length >= 2 && <div className="text-[11px] text-gray-400">Start game</div>}
+            </div>
           </button>
         ) : (
           <div className="h-14 flex items-center justify-center">

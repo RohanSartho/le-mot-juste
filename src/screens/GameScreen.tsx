@@ -3,6 +3,7 @@ import { useSessionStore } from '../stores/sessionStore'
 import { fetchWordById, pickNextWordId } from '../lib/words'
 import { awardPoints } from '../lib/scoring'
 import { advanceCard } from '../lib/sessions'
+import { Subtitle } from '../components/Subtitle'
 import type { Word } from '../types'
 
 interface Props { code: string }
@@ -119,13 +120,15 @@ export default function GameScreen({ code }: Props) {
     : 'bg-rose-500'
 
   const wordsLeft = session.settings.words_per_round - session.words_this_turn
-  const roundLabel = `Tour ${Math.min(session.rounds_played + 1, session.settings.rounds)} / ${session.settings.rounds}`
+  const roundNum = Math.min(session.rounds_played + 1, session.settings.rounds)
+  const roundLabel = `Tour ${roundNum} / ${session.settings.rounds}`
+  const roundLabelEn = `Round ${roundNum} / ${session.settings.rounds}`
 
   // ── Shared top bar ────────────────────────────────────────────────────────
   const TopBar = (
     <div className="px-5 pt-5 pb-3">
       <div className="flex justify-between items-center mb-2">
-        <span className="text-xs font-semibold text-stone-400">{roundLabel}</span>
+        <Subtitle french={roundLabel} english={roundLabelEn} className="text-xs font-semibold text-stone-400" />
         <span className={`text-lg font-black tabular-nums ${timeLeft <= 10 ? 'text-rose-600' : 'text-stone-700'}`}>
           {timeLeft}s
         </span>
@@ -152,13 +155,23 @@ export default function GameScreen({ code }: Props) {
         {TopBar}
 
         {/* Word indicator */}
-        <div className="px-5 pb-2 flex items-center justify-between">
-          <p className="text-xs text-stone-400">
-            Mot <span className="font-bold text-stone-600">{session.words_this_turn + 1}</span> / {session.settings.words_per_round}
-          </p>
-          <p className="text-xs text-stone-500 font-medium">
-            {session.current_describer} — c'est ton tour
-          </p>
+        <div className="px-5 pb-2 flex items-center justify-between flex-col gap-1">
+          <div className="w-full flex justify-between">
+            <p className="text-xs text-stone-400">
+              Mot <span className="font-bold text-stone-600">{session.words_this_turn + 1}</span> / {session.settings.words_per_round}
+            </p>
+            <p className="text-xs text-gray-400">
+              Word <span className="font-bold">{session.words_this_turn + 1}</span> / {session.settings.words_per_round}
+            </p>
+          </div>
+          <div className="w-full flex justify-between">
+            <p className="text-xs text-stone-500 font-medium">
+              {session.current_describer} — c'est ton tour
+            </p>
+            <p className="text-xs text-gray-400">
+              It's your turn
+            </p>
+          </div>
         </div>
 
         {/* Word card */}
@@ -187,9 +200,10 @@ export default function GameScreen({ code }: Props) {
                 <div>
                   {session.settings.taboo_enabled ? (
                     <>
-                      <p className="text-xs font-semibold text-rose-400 uppercase tracking-widest mb-2">
-                        🚫 Interdit
-                      </p>
+                      <div className="text-xs font-semibold text-rose-400 uppercase tracking-widest mb-2">
+                        <div>🚫 Interdit</div>
+                        <div className="text-gray-400 normal-case text-xs mt-0.5">Forbidden</div>
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {currentWord.forbidden_words.map(w => (
                           <span key={w} className="text-sm bg-rose-50 text-rose-700 border border-rose-200 rounded-full px-3 py-1 font-medium">
@@ -200,9 +214,10 @@ export default function GameScreen({ code }: Props) {
                     </>
                   ) : (
                     <>
-                      <p className="text-xs font-semibold text-teal-500 uppercase tracking-widest mb-2">
-                        🔑 Mots associés
-                      </p>
+                      <div className="text-xs font-semibold text-teal-500 uppercase tracking-widest mb-2">
+                        <div>🔑 Mots associés</div>
+                        <div className="text-gray-400 normal-case text-xs mt-0.5">Associated words</div>
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {/* synonyms first (more direct), then forbidden_words — deduplicated */}
                         {[...new Set([
@@ -222,9 +237,10 @@ export default function GameScreen({ code }: Props) {
               {/* Indices */}
               {currentWord.hints.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-amber-500 uppercase tracking-widest mb-2">
-                    💡 Indices
-                  </p>
+                  <div className="text-xs font-semibold text-amber-500 uppercase tracking-widest mb-2">
+                    <div>💡 Indices</div>
+                    <div className="text-gray-400 normal-case text-xs mt-0.5">Hints</div>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {currentWord.hints.map(h => (
                       <span key={h} className="text-sm bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-3 py-1">
@@ -248,21 +264,26 @@ export default function GameScreen({ code }: Props) {
                   <div className="border-t border-stone-100 pt-4">
                     {isRevealed ? (
                       <div className="bg-sky-50 border border-sky-200 rounded-2xl p-4">
-                        <p className="text-xs font-semibold text-sky-400 uppercase tracking-widest mb-1.5">
-                          📖 Définition
-                        </p>
+                        <div className="text-xs font-semibold text-sky-400 uppercase tracking-widest mb-1.5">
+                          <div>📖 Définition</div>
+                          <div className="text-gray-400 normal-case text-xs mt-0.5">Definition</div>
+                        </div>
                         <p className="text-sm text-sky-800 font-medium leading-snug">
                           {hintText}
                         </p>
-                        <p className="text-xs text-sky-400 mt-2">−1 pt appliqué</p>
+                        <div className="text-xs text-sky-400 mt-2">
+                          <div>−1 pt appliqué</div>
+                          <div className="text-gray-400">−1 pt applied</div>
+                        </div>
                       </div>
                     ) : (
                       <button
                         type="button"
                         onClick={onReveal}
-                        className="w-full py-3 rounded-2xl border-2 border-dashed border-sky-300 text-sky-500 text-sm font-semibold active:scale-95 [touch-action:manipulation]"
+                        className="w-full py-3 rounded-2xl border-2 border-dashed border-sky-300 text-sky-500 text-sm font-semibold active:scale-95 [touch-action:manipulation] flex flex-col items-center"
                       >
-                        📖 Révéler la définition (−1 pt)
+                        <div>📖 Révéler la définition (−1 pt)</div>
+                        <div className="text-xs text-gray-400">Show definition</div>
                       </button>
                     )}
                   </div>
@@ -282,17 +303,19 @@ export default function GameScreen({ code }: Props) {
             type="button"
             onClick={() => handleAdvance(false)}
             disabled={isAdvancing}
-            className="flex-1 h-16 bg-white border-2 border-stone-200 text-stone-600 rounded-2xl text-base font-bold active:scale-95 [touch-action:manipulation] shadow-sm disabled:opacity-40"
+            className="flex-1 h-16 bg-white border-2 border-stone-200 text-stone-600 rounded-2xl text-base font-bold active:scale-95 [touch-action:manipulation] shadow-sm disabled:opacity-40 flex flex-col items-center justify-center"
           >
-            Passer
+            <div>Passer</div>
+            <div className="text-xs text-gray-400">Skip</div>
           </button>
           <button
             type="button"
             onClick={() => handleAdvance(true)}
             disabled={isAdvancing}
-            className="flex-[2] h-16 bg-emerald-600 text-white rounded-2xl text-base font-bold active:scale-95 [touch-action:manipulation] shadow-sm disabled:opacity-40"
+            className="flex-[2] h-16 bg-emerald-600 text-white rounded-2xl text-base font-bold active:scale-95 [touch-action:manipulation] shadow-sm disabled:opacity-40 flex flex-col items-center justify-center"
           >
-            ✓ Correct !
+            <div>✓ Correct !</div>
+            <div className="text-xs text-emerald-200">Correct!</div>
           </button>
         </div>
       </Shell>
@@ -308,19 +331,20 @@ export default function GameScreen({ code }: Props) {
 
         {/* Who is describing */}
         <div className="bg-white rounded-3xl p-8 shadow-md border border-amber-100 text-center space-y-3">
-          <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">Décrit par</p>
+          <Subtitle french="Décrit par" english="Described by" className="text-xs font-semibold text-stone-400 uppercase tracking-widest" />
           <p className="text-4xl font-black text-stone-900">{session.current_describer}</p>
-          <p className="text-stone-400 text-sm">Écoute et crie ta réponse !</p>
+          <Subtitle french="Écoute et crie ta réponse !" english="Listen and shout your answer!" className="text-stone-400 text-sm" />
           <div className="pt-1">
             <span className="inline-block bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-1 rounded-full border border-amber-200">
-              Mot {session.words_this_turn + 1} / {session.settings.words_per_round}
+              <div>Mot {session.words_this_turn + 1} / {session.settings.words_per_round}</div>
+              <div className="text-gray-400 text-xs mt-0.5">Word {session.words_this_turn + 1} / {session.settings.words_per_round}</div>
             </span>
           </div>
         </div>
 
         {/* Scoreboard */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-amber-100">
-          <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-3">Scores</p>
+          <Subtitle french="Scores" english="Scores" className="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-3" />
           <ul className="space-y-2.5">
             {Object.entries(session.scores)
               .sort(([, a], [, b]) => b - a)
@@ -340,8 +364,9 @@ export default function GameScreen({ code }: Props) {
         </div>
       </div>
 
-      <div className="px-5 pb-8 pt-2">
+      <div className="px-5 pb-8 pt-2 space-y-1">
         <p className="text-center text-xs text-stone-400">{wordsLeft} mot{wordsLeft !== 1 ? 's' : ''} restant{wordsLeft !== 1 ? 's' : ''} pour {session.current_describer}</p>
+        <p className="text-center text-xs text-gray-400">{wordsLeft} word{wordsLeft !== 1 ? 's' : ''} left for {session.current_describer}</p>
       </div>
     </Shell>
   )
