@@ -38,6 +38,7 @@ Toggle in the lobby settings before starting.
 - 📖 Reveal definition button — shows Wiktionary definition on demand (costs −1 pt)
 - Real-time sync via Firestore — all devices stay in sync automatically
 - Sessions auto-expire 2 hours after creation
+- 🌍 **Bilingual UI** — English subtitles throughout for English speakers (game content remains French-only)
 
 ---
 

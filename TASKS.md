@@ -182,6 +182,51 @@
 
 ---
 
+## Phase 10: Bilingual UI (English Subtitles) ✅ COMPLETE
+
+### 10A — English subtitles for accessibility
+- [x] `src/components/Subtitle.tsx` — reusable component for French + English text pairs
+  - English text: smaller font (`text-xs` or `text-[10px]`), light grey (`text-gray-400`)
+  - Props: `french`, `english`, `className`, `smaller` flag
+- [x] **Home screen** (Create game tab):
+  - Form labels: "Ton prénom / Your name", "Code de la partie / Game code"
+  - Tab labels: "Créer / Create" (text-base), "Rejoindre / Join" (text-base)
+  - Difficulty buttons: Tous/All, Facile/Easy, Moyen/Medium, Dur/Hard (1pt smaller English)
+  - Category pills: each shows French + English translation (e.g., "Nourriture / Food & places")
+  - "Mode Tabou / Taboo Mode" with "Mots interdits visibles / Show forbidden words"
+- [x] **Lobby screen** (Join + game lobby):
+  - "Rejoindre la partie / Join game"
+  - "Ton prénom / Your name"
+  - "Code de la partie / Game code"
+  - "Joueurs / Players" (1pt smaller)
+  - "Paramètres / Settings" (1pt smaller)
+  - "Démarrer la partie → / Start game" (1pt smaller English)
+  - Copy button: "Copier / Copy"
+- [x] **Game screen** (describer + guesser):
+  - Round label: "Tour X / Y / Round X / Y"
+  - Word counter: "Mot X / Y / Word X / Y"
+  - Forbidden words: "🚫 Interdit / Forbidden"
+  - Associated words (taboo-off): "🔑 Mots associés / Associated words"
+  - Hints: "💡 Indices / Hints"
+  - Definition button: "📖 Révéler la définition / Show definition"
+  - Control buttons: "Passer / Skip", "✓ Correct ! / Correct!"
+  - Guesser info: "Décrit par / Described by", "Écoute et crie ta réponse ! / Listen and shout your answer!"
+  - Scoreboard: "Scores / Scores"
+  - Words left: "X mot(s) restant(s) pour {describer} / X word(s) left for {describer}"
+- [x] **End game screen**:
+  - "Fin du jeu ! / Game Over!"
+  - "Félicitations à / Congratulations to"
+  - "Classement final / Final Rankings"
+  - "(toi) / (you)" badge
+  - "Rejouer (mêmes joueurs) → / Play again (same players)"
+  - "Nouvelle partie → / New game"
+- [x] Game words, hints, forbidden words, categories remain French-only (content stays authentic)
+- [x] Secure .gitignore: added `*.mjs`, `serviceAccountKey.json` patterns
+- [x] Removed debug scripts: `debug.mjs`, `deleteOldSessions.mjs`
+- [x] GitHub: https://github.com/RohanSartho/le-mot-juste (secure, no API keys exposed)
+
+---
+
 ## Post-v1 Backlog (do not implement)
 - [ ] Real-time guess sync via Firestore Realtime
 - [ ] Custom word packs

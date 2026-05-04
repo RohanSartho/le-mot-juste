@@ -61,6 +61,9 @@ Le Mot Juste is a real-time multiplayer French vocabulary learning game. Players
 - [x] Wiktionary definitions (hint2) as default hint reveal
 - [x] Taboo-off mode shows forbidden words as clues (🔑 Mots associés) — **default: taboo off**
 - [x] Vercel Cron purges stale sessions daily (api/purge-sessions.ts)
+- [x] **Bilingual UI**: English subtitles under all French labels and UI terms for English-speaking users
+  - Form labels, buttons, section headers have English translations in smaller, lighter text
+  - Game content (words, hints, forbidden words, categories) remains French-only for authenticity
 
 ## Post-v1 Backlog
 - [ ] Guesser point tracking (see TASKS.md for design options)
