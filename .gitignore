@@ -29,3 +29,12 @@ dist
 
 # Large source data files — not needed in repo (seed script reads these locally)
 seed/*.tsv
+
+# Debug and admin scripts (local-only)
+debug.mjs
+deleteOldSessions.mjs
+*.mjs
+
+# Firebase service account keys (local-only)
+serviceAccountKey.json
+*-key.json
